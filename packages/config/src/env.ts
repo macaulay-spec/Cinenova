@@ -8,6 +8,7 @@ export const envSchema = z.object({
   REDIS_URL: z.string().min(1).optional(),
   SESSION_SECRET: z.string().min(32).optional(),
   CSRF_SECRET: z.string().min(32).optional(),
+  PERSISTENCE: z.enum(['memory', 'postgres']).default('memory'),
   PROVIDER_ROUTING: z.enum(['mock', 'gzmovie']).default('gzmovie'),
   GZMOVIE_ENABLED: z
     .enum(['true', 'false'])

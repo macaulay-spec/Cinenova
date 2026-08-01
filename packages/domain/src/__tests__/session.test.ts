@@ -6,7 +6,9 @@ import {
   issueSession,
   newSessionToken,
   revokeSession,
+  rotateSession,
   sessionNeedsRotation,
+  sessionsToEvictForLimit,
   touchSession,
   verifyCsrfToken,
 } from '../session';
@@ -72,6 +74,32 @@ describe('session lifecycle', () => {
 
     const idleLater = new Date(now.getTime() + 1000 * 60 * 60 + 1);
     expect(sessionNeedsRotation(touched, idleLater, 1000 * 60 * 60)).toBe(true);
+  });
+});
+
+describe('session rotation and limits', () => {
+  const now = new Date('2026-08-02T12:00:00.000Z');
+
+  it('rotates a session to a fresh token while preserving id', () => {
+    const { session } = issueSession({ userId: 'u', profileId: 'p', deviceId: 'd', now });
+    const rotated = rotateSession(session, { now });
+    expect(rotated.session.id).toBe(session.id);
+    expect(rotated.session.tokenHash).not.toBe(session.tokenHash);
+    expect(rotated.session.userId).toBe(session.userId);
+  });
+
+  it('evicts oldest sessions beyond the concurrent limit', () => {
+    const s1 = issueSession({ userId: 'u', profileId: 'p', deviceId: 'd', now });
+    const s2 = issueSession({ userId: 'u', profileId: 'p', deviceId: 'd', now });
+    const s3 = issueSession({ userId: 'u', profileId: 'p', deviceId: 'd', now });
+    const toEvict = sessionsToEvictForLimit([s1.session, s2.session, s3.session], 2);
+    expect(toEvict.map((s) => s.id)).toEqual([s1.session.id]);
+  });
+
+  it('evicts nothing when within the limit', () => {
+    const s1 = issueSession({ userId: 'u', profileId: 'p', deviceId: 'd', now });
+    const s2 = issueSession({ userId: 'u', profileId: 'p', deviceId: 'd', now });
+    expect(sessionsToEvictForLimit([s1.session, s2.session], 2)).toEqual([]);
   });
 });
 

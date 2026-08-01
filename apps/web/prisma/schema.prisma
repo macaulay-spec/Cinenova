@@ -113,17 +113,22 @@ model AuthIdentity {
 }
 
 model Session {
-  id                 String   @id @default(uuid()) @db.Uuid
-  userId             String   @db.Uuid
-  deviceId           String?  @db.Uuid
-  tokenHash          String   @unique
+  id                 String    @id @default(uuid()) @db.Uuid
+  userId             String    @db.Uuid
+  profileId          String    @db.Uuid
+  deviceId           String?   @db.Uuid
+  tokenHash          String    @unique
   ipHash             String?
   userAgentHash      String?
+  ip                 String?
+  userAgent          String?
+  lastSeenAt         DateTime  @default(now())
   expiresAt          DateTime
   revokedAt          DateTime?
-  createdAt          DateTime @default(now())
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  device             Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  createdAt          DateTime  @default(now())
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile            Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  device             Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
 
   @@index([userId, expiresAt])
   @@index([deviceId])
@@ -133,6 +138,7 @@ model Profile {
   id                    String                 @id @default(uuid()) @db.Uuid
   userId                String                 @db.Uuid
   name                  String
+  avatarInitial         String                 @default("")
   type                  ProfileType            @default(ADULT)
   maturityCeiling       MaturityRating         @default(R)
   pinHash               String?

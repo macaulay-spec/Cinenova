@@ -143,6 +143,48 @@ export function revokeSession(session: SessionRecord, now: Date): SessionRecord 
   };
 }
 
+/**
+ * Rotate a session: revoke the old token and issue a fresh one for the same
+ * user/profile/device while preserving the session id. Used when a session
+ * exceeds its idle threshold so a leaked token cannot be replayed forever.
+ * Returns the fresh session (with a new tokenHash) and the new raw token.
+ */
+export function rotateSession(
+  session: SessionRecord,
+  options: { sessionTtlMs?: number; now?: Date },
+): IssuedSession {
+  const now = options.now ?? new Date();
+  const revoked = revokeSession(session, now);
+  const fresh = issueSession({
+    userId: session.userId,
+    profileId: session.profileId,
+    deviceId: session.deviceId,
+    sessionTtlMs: options.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS,
+    ...(session.userAgent ? { userAgent: session.userAgent } : {}),
+    ...(session.ip ? { ip: session.ip } : {}),
+    now,
+  });
+  fresh.session.id = revoked.id;
+  return fresh;
+}
+
+/**
+ * Enforce a per-user concurrent-session limit. Given the currently active
+ * sessions for a user and the limit, returns the set of sessions that must be
+ * revoked (oldest first) so the newest session is admitted. Returns an empty
+ * array when the limit is not exceeded.
+ */
+export function sessionsToEvictForLimit(active: SessionRecord[], limit: number): SessionRecord[] {
+  if (limit <= 0) {
+    return active;
+  }
+  if (active.length <= limit) {
+    return [];
+  }
+  const sorted = [...active].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  return sorted.slice(0, sorted.length - limit);
+}
+
 function encodeCsrfPayload(sessionId: string, userId: string, expMs: number): string {
   return Buffer.from(JSON.stringify({ sid: sessionId, uid: userId, exp: expMs }), 'utf8').toString(
     'base64url',

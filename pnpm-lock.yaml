@@ -136,6 +136,19 @@ importers:
         specifier: 3.24.1
         version: 3.24.1
 
+  packages/db:
+    dependencies:
+      '@cinenova/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@prisma/client':
+        specifier: 6.1.0
+        version: 6.1.0(prisma@6.1.0)
+    devDependencies:
+      prisma:
+        specifier: 6.1.0
+        version: 6.1.0
+
   packages/domain: {}
 
   packages/observability: {}

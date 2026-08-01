@@ -22,7 +22,8 @@
       "@cinenova/provider-sdk": ["packages/provider-sdk/src/index.ts"],
       "@cinenova/ui": ["packages/ui/src/index.ts"],
       "@cinenova/observability": ["packages/observability/src/index.ts"],
-      "@cinenova/config": ["packages/config/src/index.ts"]
+      "@cinenova/config": ["packages/config/src/index.ts"],
+      "@cinenova/db": ["packages/db/src/index.ts"]
     }
   }
 }

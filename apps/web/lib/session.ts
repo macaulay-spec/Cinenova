@@ -14,7 +14,9 @@ import {
   isSessionActive,
   issueCsrfToken,
   issueSession,
+  rotateSession,
   revokeSession,
+  sessionsToEvictForLimit,
   touchSession,
   verifyCsrfToken,
   type SessionRepository,
@@ -42,6 +44,27 @@ export function getSessionRepository(): SessionRepository {
     sessionRepo = new InMemorySessionRepository();
   }
   return sessionRepo;
+}
+
+/**
+ * Build the session repository from the configured persistence backend.
+ * - "memory" (default): in-memory, per-process, non-durable (local/demo/tests).
+ * - "postgres": Prisma-backed adapters from @cinenova/db. Requires the Prisma
+ *   client to be generated (`npx prisma generate`) and a reachable database.
+ *
+ * The web app currently keeps the in-memory default so local/demo operation
+ * works without a database. Production should set PERSISTENCE=postgres.
+ */
+export function buildSessionRepository(
+  backend: 'memory' | 'postgres' = 'memory',
+): SessionRepository {
+  if (backend === 'postgres') {
+    throw new Error(
+      'PostgreSQL persistence is not yet wired at runtime in the web app. ' +
+        'Run `prisma generate` from apps/web and connect a database, then enable it.',
+    );
+  }
+  return new InMemorySessionRepository();
 }
 
 export interface SessionResolution {
@@ -109,7 +132,10 @@ export async function createSessionForProfile(
   userId: string,
   profileId: string,
   deviceId: string,
+  opts?: { concurrentLimit?: number },
 ): Promise<{ token: string; session: SessionRecord }> {
+  const repo = getSessionRepository();
+  const now = new Date();
   const userAgent = (await headers()).get('user-agent');
   const issued = issueSession({
     userId,
@@ -117,11 +143,34 @@ export async function createSessionForProfile(
     deviceId,
     sessionTtlMs: SESSION_TTL_MS,
     ...(userAgent ? { userAgent } : {}),
-    now: new Date(),
+    now,
   });
 
-  await getSessionRepository().create(issued.session);
+  await repo.create(issued.session);
+
+  // Enforce the concurrent-session limit: evict the oldest active sessions.
+  const limit = opts?.concurrentLimit ?? 2;
+  const active = await repo.listActiveByUser(userId, now);
+  const toEvict = sessionsToEvictForLimit(active, limit);
+  for (const stale of toEvict) {
+    if (stale.id !== issued.session.id) {
+      await repo.revokeById(stale.id, now);
+    }
+  }
+
   return { token: issued.token, session: issued.session };
+}
+
+/**
+ * Rotate an existing session (e.g. on idle threshold) and return a new raw
+ * token to be written into the response cookie. The old token is revoked.
+ */
+export async function rotateActiveSession(
+  session: SessionRecord,
+): Promise<{ token: string; session: SessionRecord }> {
+  const rotated = rotateSession(session, { sessionTtlMs: SESSION_TTL_MS, now: new Date() });
+  await getSessionRepository().update(rotated.session);
+  return { token: rotated.token, session: rotated.session };
 }
 
 export async function touchActiveSession(session: SessionRecord): Promise<void> {

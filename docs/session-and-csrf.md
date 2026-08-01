@@ -83,11 +83,18 @@ to a Kids profile, requesting an R-rated title returns `403 PROFILE_RESTRICTED`.
 
 - The in-memory session store is per-process and not durable. Production must
   use a shared store (Redis or PostgreSQL) implementing the same
-  `SessionRepository` port.
-- Active session rotation (re-issuing the token on idle) and concurrent-session
-  limits are defined/tested in the domain but not yet enforced in the web layer.
+  `SessionRepository` port. The PostgreSQL adapters live in `@cinenova/db`; see
+  `docs/database-persistence.md` for the enable path.
 - `CSRF_SECRET` is required in production; the derived local fallback is not
   suitable for production.
+
+## Session hardening (enforced)
+
+- **Rotation:** `GET /api/v1/auth/session` rotates the token when a session has
+  been idle past `SESSION_IDLE_TTL_MS` (12h), revoking the old token and issuing
+  a fresh one with a new cookie.
+- **Concurrent-session limit:** when a session is created, the oldest active
+  sessions beyond the user's `concurrentStreamLimit` are evicted.
 
 ## Security properties
 

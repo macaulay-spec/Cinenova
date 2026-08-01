@@ -17,6 +17,8 @@ This first milestone creates the application foundation:
 - Unit tests for policy, redaction, session, and CSRF logic
 - Identity/profile/RBAC foundation with request-scoped active profile policy
 - Server-side session + CSRF boundary (hashed tokens, repository ports, in-memory adapter) protecting all mutations
+- Session hardening: active token rotation on idle and concurrent-session limits
+- PostgreSQL persistence adapters (`@cinenova/db`) implementing the repository ports
 
 ## Legal and security stance
 
