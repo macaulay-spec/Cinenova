@@ -10,6 +10,68 @@ servers:
   - url: http://localhost:3000
     description: Local development
 paths:
+  /api/v1/me:
+    get:
+      summary: Get request-scoped principal
+      operationId: getMe
+      responses:
+        '200':
+          description: Active user, profile, devices, entitlement, roles, and permissions
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/profiles:
+    get:
+      summary: List profiles for the active account
+      operationId: getProfiles
+      responses:
+        '200':
+          description: Profile list and active profile
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Validate profile creation request
+      operationId: createProfile
+      responses:
+        '202':
+          description: Profile creation accepted by contract; persistence pending identity writer
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Problem'
+  /api/v1/profiles/active:
+    post:
+      summary: Switch active profile
+      operationId: switchActiveProfile
+      responses:
+        '200':
+          description: Active profile switched for JSON clients
+          content:
+            application/json:
+              schema:
+                type: object
+        '303':
+          description: Redirect for browser form submissions
+        '400':
+          $ref: '#/components/responses/Problem'
+  /api/v1/admin/audit:
+    get:
+      summary: List audit log entries when the principal has audit permission
+      operationId: getAuditLog
+      responses:
+        '200':
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/Problem'
   /api/v1/catalogue:
     get:
       summary: Get home catalogue rails

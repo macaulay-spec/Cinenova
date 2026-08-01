@@ -15,6 +15,7 @@ This first milestone creates the application foundation:
 - Docker Compose for Postgres, Redis, mail mock, web, and worker services
 - OpenAPI, ADRs, threat model, SLOs, launch checklist, and runbooks
 - Unit tests for policy and redaction logic
+- Identity/profile/RBAC foundation with request-scoped active profile policy
 
 ## Legal and security stance
 
@@ -54,4 +55,4 @@ infra/                   Docker, Kubernetes, and Terraform templates
 docs/                    ADRs, architecture, API, security, SLOs, runbooks
 ```
 
-See `docs/architecture.md` and `docs/assumptions-and-dependencies.md` before enabling real providers, billing, or DRM.
+See `docs/architecture.md`, `docs/identity-and-profiles.md`, and `docs/assumptions-and-dependencies.md` before enabling real providers, billing, or DRM.

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const principal = getLocalPrincipal();
+  const principal = await getLocalPrincipal();
   const assetId = parsed.data.assetId ?? title.primaryAssetId;
   const decision = evaluateDownload({
     title: {

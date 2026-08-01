@@ -4,6 +4,9 @@ The source OpenAPI 3.1 document is `docs/openapi.yaml`.
 
 Initial endpoints:
 
+- `GET /api/v1/me` — request-scoped principal, active profile, devices, entitlement, and RBAC permissions.
+- `GET /api/v1/profiles` — profile list and active profile.
+- `POST /api/v1/profiles/active` — switch active profile using an HttpOnly SameSite cookie.
 - `GET /api/v1/catalogue` — cached public home rails from the mock licensed catalogue.
 - `GET /api/v1/search?q=&region=NG` — public search with validation.
 - `GET /api/v1/title/{slug}` — title details and rights explanation.

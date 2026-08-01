@@ -29,7 +29,7 @@ export async function createPlaybackSession(
     return { source: null, title: null, decision: null, error: 'Title was not found.' };
   }
 
-  const principal = getLocalPrincipal();
+  const principal = await getLocalPrincipal();
   const assetId = request.assetId ?? title.primaryAssetId;
   const decision = evaluateRights({
     title: {
