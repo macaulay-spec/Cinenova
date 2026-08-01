@@ -7,10 +7,13 @@ import {
 } from '@cinenova/contracts';
 import { evaluateRights, type PolicyDecision } from '@cinenova/domain';
 import { MOCK_RIGHTS } from '@cinenova/provider-sdk';
-import { getLocalPrincipal } from './local-principal';
+import type { LocalPrincipal } from './local-principal';
 import { getCatalogProvider } from './providers';
 
-const APPROVED_MEDIA_HOSTS = new Set(['commondatastorage.googleapis.com', 'storage.googleapis.com']);
+const APPROVED_MEDIA_HOSTS = new Set([
+  'commondatastorage.googleapis.com',
+  'storage.googleapis.com',
+]);
 
 export interface PlaybackSessionResult {
   source: PlaybackSource | null;
@@ -21,6 +24,7 @@ export interface PlaybackSessionResult {
 
 export async function createPlaybackSession(
   request: CreatePlaybackSessionRequest,
+  principal: LocalPrincipal,
 ): Promise<PlaybackSessionResult> {
   const provider = getCatalogProvider();
   const title = await provider.titleById(request.titleId, request.territory);
@@ -29,7 +33,6 @@ export async function createPlaybackSession(
     return { source: null, title: null, decision: null, error: 'Title was not found.' };
   }
 
-  const principal = await getLocalPrincipal();
   const assetId = request.assetId ?? title.primaryAssetId;
   const decision = evaluateRights({
     title: {

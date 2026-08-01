@@ -14,11 +14,14 @@ identity provider is configured. The demo principal is local, but the API and UI
 
 ## Endpoints
 
-- `GET /api/v1/me` — returns the active principal contract with no-store caching.
+- `GET /api/v1/me` — returns the active principal contract plus session status with no-store caching.
+- `GET /api/v1/auth/session` — establishes/resolves the server-side session and returns a CSRF token.
+- `POST /api/v1/auth/session/revoke` — revokes the current session and clears its cookie.
 - `GET /api/v1/profiles` — returns profiles and active profile.
 - `POST /api/v1/profiles` — validates the profile creation request and returns a 202 non-persisted
-  contract response until the database identity writer is connected.
-- `POST /api/v1/profiles/active` — switches the active profile by setting an HttpOnly SameSite cookie.
+  contract response until the database identity writer is connected (CSRF-protected).
+- `POST /api/v1/profiles/active` — switches the active profile and keeps the session's bound profile
+  in sync (CSRF-protected).
 - `GET /api/v1/admin/audit` — demonstrates server-side RBAC denial for principals without `audit:read`.
 
 ## Active profile cookie
@@ -40,12 +43,18 @@ Playback and download APIs now call the request-scoped principal resolver. The s
 maturity enforcement. For example, selecting the Kids profile makes adult/R-rated titles fail the same
 server-side rights policy used by playback sessions.
 
+## Session and CSRF boundary
+
+Sessions are server-side records identified by the hash of an opaque raw token; the raw token lives
+only in an `HttpOnly`, `SameSite=Strict` cookie. Mutations require a valid session-bound CSRF token in
+the `x-csrf-token` header. See `docs/session-and-csrf.md` and `docs/adr/0007-session-csrf-boundary.md`.
+
 ## Production work remaining
 
 - Passwordless/email and social auth adapters.
 - Argon2id password storage for password option.
 - MFA-ready account recovery and device binding.
-- Persistent profile CRUD through Prisma repositories.
-- CSRF tokens for all browser mutations.
-- Session rotation/revocation and token hashing.
+- Persistent profile CRUD through Prisma repositories (replacing the in-memory adapters).
+- Active session rotation (idle threshold enforcement) and concurrent-session limits.
 - Immutable PostgreSQL-backed audit writer.
+- Shared durable session store for multi-instance deployments.

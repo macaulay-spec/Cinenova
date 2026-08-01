@@ -14,8 +14,9 @@ This first milestone creates the application foundation:
 - Prisma schema and initial SQL migration for the core data model
 - Docker Compose for Postgres, Redis, mail mock, web, and worker services
 - OpenAPI, ADRs, threat model, SLOs, launch checklist, and runbooks
-- Unit tests for policy and redaction logic
+- Unit tests for policy, redaction, session, and CSRF logic
 - Identity/profile/RBAC foundation with request-scoped active profile policy
+- Server-side session + CSRF boundary (hashed tokens, repository ports, in-memory adapter) protecting all mutations
 
 ## Legal and security stance
 
@@ -55,4 +56,4 @@ infra/                   Docker, Kubernetes, and Terraform templates
 docs/                    ADRs, architecture, API, security, SLOs, runbooks
 ```
 
-See `docs/architecture.md`, `docs/identity-and-profiles.md`, and `docs/assumptions-and-dependencies.md` before enabling real providers, billing, or DRM.
+See `docs/architecture.md`, `docs/identity-and-profiles.md`, `docs/session-and-csrf.md`, and `docs/assumptions-and-dependencies.md` before enabling real providers, billing, or DRM.

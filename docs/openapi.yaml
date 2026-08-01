@@ -12,15 +12,57 @@ servers:
 paths:
   /api/v1/me:
     get:
-      summary: Get request-scoped principal
+      summary: Get principal, entitlement, and session status
       operationId: getMe
       responses:
         '200':
-          description: Active user, profile, devices, entitlement, roles, and permissions
+          description: Active user, profile, devices, entitlement, roles, permissions, and session status
           content:
             application/json:
               schema:
                 type: object
+  /api/v1/auth/session:
+    get:
+      summary: Establish or resolve the session and return a CSRF token
+      operationId: getSession
+      responses:
+        '200':
+          description: Session established; sets the HttpOnly session cookie and returns a CSRF token
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: The HttpOnly, SameSite=Strict session cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [authenticated, sessionId, profileId, csrfToken, csrfRequired, expiresAt]
+                properties:
+                  authenticated:
+                    type: boolean
+                  sessionId:
+                    type: string
+                  profileId:
+                    type: string
+                  csrfToken:
+                    type: string
+                  csrfRequired:
+                    type: boolean
+                  expiresAt:
+                    type: string
+                    format: date-time
+  /api/v1/auth/session/revoke:
+    post:
+      summary: Revoke the current session and clear its cookie
+      operationId: revokeSession
+      responses:
+        '200':
+          description: Session revoked and cookie cleared
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
   /api/v1/profiles:
     get:
       summary: List profiles for the active account
@@ -35,6 +77,8 @@ paths:
     post:
       summary: Validate profile creation request
       operationId: createProfile
+      security:
+        - CsrfToken: []
       responses:
         '202':
           description: Profile creation accepted by contract; persistence pending identity writer
@@ -48,6 +92,8 @@ paths:
     post:
       summary: Switch active profile
       operationId: switchActiveProfile
+      security:
+        - CsrfToken: []
       responses:
         '200':
           description: Active profile switched for JSON clients
@@ -137,6 +183,8 @@ paths:
     post:
       summary: Create a short-lived playback session
       operationId: createPlaybackSession
+      security:
+        - CsrfToken: []
       requestBody:
         required: true
         content:
@@ -182,6 +230,8 @@ paths:
     post:
       summary: Request an offline download authorization
       operationId: createDownload
+      security:
+        - CsrfToken: []
       requestBody:
         required: true
         content:
@@ -240,6 +290,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProviderHealth'
 components:
+  securitySchemes:
+    CsrfToken:
+      type: apiKey
+      in: header
+      name: x-csrf-token
+      description: >-
+        A short-lived, HMAC-signed CSRF token bound to the active session and
+        user, returned by GET /api/v1/auth/session. Required on all mutations.
   responses:
     Problem:
       description: RFC 7807-like problem response

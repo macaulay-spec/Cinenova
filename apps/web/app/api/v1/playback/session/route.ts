@@ -2,8 +2,14 @@ import { NextResponse } from 'next/server';
 import { createPlaybackSessionRequestSchema } from '@cinenova/contracts';
 import { createPlaybackSession } from '../../../../../lib/playback';
 import { problemResponse, validationProblem } from '../../../../../lib/problem';
+import { requireCsrf } from '../../../../../lib/csrf-guard';
 
 export async function POST(request: Request) {
+  const csrf = await requireCsrf(request);
+  if ('response' in csrf) {
+    return csrf.response;
+  }
+
   const json = await request.json().catch(() => null);
   const parsed = createPlaybackSessionRequestSchema.safeParse(json);
 
@@ -11,7 +17,7 @@ export async function POST(request: Request) {
     return validationProblem(parsed.error.message);
   }
 
-  const result = await createPlaybackSession(parsed.data);
+  const result = await createPlaybackSession(parsed.data, csrf.principal);
 
   if (!result.title) {
     return problemResponse({

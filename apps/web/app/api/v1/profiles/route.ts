@@ -3,6 +3,7 @@ import { createProfileRequestSchema } from '@cinenova/contracts';
 import { DEMO_PROFILES, getPrincipalDto } from '../../../../lib/local-principal';
 import { recordAuditPlaceholder } from '../../../../lib/audit';
 import { validationProblem } from '../../../../lib/problem';
+import { requireCsrf } from '../../../../lib/csrf-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const csrf = await requireCsrf(request);
+  if ('response' in csrf) {
+    return csrf.response;
+  }
+
   const json = await request.json().catch(() => null);
   const parsed = createProfileRequestSchema.safeParse(json);
 
@@ -23,7 +29,10 @@ export async function POST(request: Request) {
   }
 
   const profile = {
-    id: `local-profile-${parsed.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`,
+    id: `local-profile-${parsed.data.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')}`,
     name: parsed.data.name,
     avatarInitial: parsed.data.name.slice(0, 1).toUpperCase(),
     type: parsed.data.type,

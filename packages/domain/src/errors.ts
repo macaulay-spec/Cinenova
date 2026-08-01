@@ -1,5 +1,6 @@
 export type ErrorCode =
   | 'AUTH_INVALID'
+  | 'CSRF_INVALID'
   | 'RIGHTS_DENIED'
   | 'PROFILE_RESTRICTED'
   | 'PROVIDER_TIMEOUT'

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { AppShell, PlayerFrame } from '@cinenova/ui';
 import { createPlaybackSession } from '../../../lib/playback';
+import { getLocalPrincipal } from '../../../lib/local-principal';
 
 interface WatchPageProps {
   params: Promise<{
@@ -22,7 +23,8 @@ export default async function WatchPage({ params, searchParams }: WatchPageProps
     ...(resolvedSearchParams.assetId ? { assetId: resolvedSearchParams.assetId } : {}),
   };
 
-  const result = await createPlaybackSession(playbackRequest);
+  const principal = await getLocalPrincipal();
+  const result = await createPlaybackSession(playbackRequest, principal);
 
   if (!result.title) {
     notFound();

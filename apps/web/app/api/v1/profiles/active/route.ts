@@ -3,6 +3,8 @@ import { switchProfileRequestSchema } from '@cinenova/contracts';
 import { ACTIVE_PROFILE_COOKIE, getProfileById } from '../../../../../lib/local-principal';
 import { recordAuditPlaceholder } from '../../../../../lib/audit';
 import { validationProblem } from '../../../../../lib/problem';
+import { requireCsrf } from '../../../../../lib/csrf-guard';
+import { updateSessionProfile } from '../../../../../lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +15,10 @@ async function parseBody(request: Request): Promise<unknown> {
     return request.json().catch(() => null);
   }
 
-  if (contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data')) {
+  if (
+    contentType.includes('application/x-www-form-urlencoded') ||
+    contentType.includes('multipart/form-data')
+  ) {
     const formData = await request.formData();
     return {
       profileId: formData.get('profileId'),
@@ -25,6 +30,11 @@ async function parseBody(request: Request): Promise<unknown> {
 }
 
 export async function POST(request: Request) {
+  const csrf = await requireCsrf(request);
+  if ('response' in csrf) {
+    return csrf.response;
+  }
+
   const parsed = switchProfileRequestSchema.safeParse(await parseBody(request));
 
   if (!parsed.success) {
@@ -35,6 +45,10 @@ export async function POST(request: Request) {
   if (!profile) {
     return validationProblem('Unknown profile.');
   }
+
+  // Keep the session's bound profile in sync with the active profile so
+  // subsequent policy decisions (playback, downloads) use the switched profile.
+  await updateSessionProfile(csrf.session.id, profile.id);
 
   const acceptsHtml = request.headers.get('accept')?.includes('text/html') ?? false;
   const response = acceptsHtml

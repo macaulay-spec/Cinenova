@@ -10,8 +10,19 @@
 
 ## Sessions
 
-Planned production sessions use HttpOnly, Secure, SameSite cookies with rotation, revocation, CSRF
-protection for mutations, device binding where appropriate, and rate limits.
+Sessions are server-side records identified by the SHA-256 hash of an opaque raw token. The raw token
+travels only in an `HttpOnly`, `SameSite=Strict` cookie and is never stored, logged, or exposed to
+browser bundles. The persistence boundary is defined by repository ports in `@cinenova/domain`; an
+in-memory adapter backs local/demo/test operation, and a PostgreSQL adapter will implement the same
+ports.
+
+State-changing (mutation) requests require a valid session-bound CSRF token presented in the
+`x-csrf-token` header. Requests without a session return `401 AUTH_INVALID`; requests with a session
+but an invalid or missing CSRF token return `403 CSRF_INVALID`. CSRF tokens are stateless, HMAC-signed
+with `CSRF_SECRET`, bound to the session and user, and short-lived.
+
+Production sessions additionally use `Secure` cookies with rotation, revocation, device binding where
+appropriate, and rate limits. Session rotation enforcement is a follow-up milestone.
 
 ## Secrets
 
