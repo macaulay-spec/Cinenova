@@ -1,0 +1,42 @@
+{
+  "name": "@cinenova/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint app components lib middleware.ts next.config.mjs --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@cinenova/config": "workspace:*",
+    "@cinenova/contracts": "workspace:*",
+    "@cinenova/domain": "workspace:*",
+    "@cinenova/observability": "workspace:*",
+    "@cinenova/provider-sdk": "workspace:*",
+    "@cinenova/ui": "workspace:*",
+    "@prisma/client": "6.1.0",
+    "@tanstack/react-query": "5.62.11",
+    "clsx": "2.1.1",
+    "lucide-react": "0.469.0",
+    "next": "15.5.21",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tailwind-merge": "2.6.0",
+    "zod": "3.24.1",
+    "zustand": "5.0.2"
+  },
+  "devDependencies": {
+    "prisma": "6.1.0",
+    "tsx": "4.19.2"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}
