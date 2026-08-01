@@ -11,7 +11,9 @@
 
 - **DRM:** abstracted conceptually only. No Widevine/FairPlay/PlayReady integration is active.
 - **Payments:** provider abstraction is planned, but Stripe/Paystack/Flutterwave credentials and webhook verification are not active.
-- **GZMovie:** adapter boundary exists but is disabled by default and not wired to public responses.
+- **GZMovie:** active catalogue backbone. The adapter normalizes its documented responses onto CineNova
+  contracts and is wired to public responses. Provider credentials are required in a secret manager and
+  never exposed client-side.
 - **Email/SMS/push:** notification preferences exist in schema, providers are not configured.
 - **Native/TV apps:** UI accounts for TV-friendly focus direction, but native clients are future work.
 

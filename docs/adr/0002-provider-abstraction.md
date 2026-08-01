@@ -6,8 +6,9 @@ Accepted
 
 ## Context
 
-The platform must not depend permanently on a single provider. GZMovie is optional, server-only, and
-disabled by default.
+The platform must not depend permanently on a single provider. GZMovie is the active catalogue
+backbone; the mock provider remains available as a fallback. Provider credentials are server-only and
+kept in a secret manager.
 
 ## Decision
 

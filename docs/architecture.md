@@ -14,7 +14,7 @@ apps/web (Next.js App Router + route handlers)
         |
         +--> packages/domain        policy decisions: rights, entitlement, RBAC, download limits
         +--> packages/contracts     Zod request/response contracts
-        +--> packages/provider-sdk  MockLicensedProvider, optional disabled GZMovie adapter
+        +--> packages/provider-sdk  GZMovie adapter (active), MockLicensedProvider (fallback)
         +--> packages/ui            cinematic accessible design system
         +--> packages/observability structured logs and redaction
         |
@@ -50,7 +50,10 @@ apps/web (Next.js App Router + route handlers)
 
 ## Provider strategy
 
-The mock licensed provider is the default and only provider wired to public UI/API routes. The GZMovie adapter exists as a server-only boundary but is disabled by default and intentionally not normalized into public APIs yet. Enabling it requires legal approval, credentials in a secret manager, response normalization, rights mapping, health dashboards, and incident runbooks.
+GZMovie is the active catalogue backbone wired to the public UI/API routes. The provider adapter
+normalizes GZMovie's documented responses onto CineNova contracts and enforces rights server-side.
+The mock licensed provider remains available as a fallback (`PROVIDER_ROUTING=mock`) for local
+development and tests. Provider credentials live in a secret manager and are never exposed client-side.
 
 ## Data strategy
 

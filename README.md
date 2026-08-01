@@ -10,7 +10,7 @@ This first milestone creates the application foundation:
 - Next.js App Router web app with a cinematic responsive UI shell
 - Domain package for rights, entitlement, RBAC, playback, and download policy decisions
 - Contracts package with Zod API schemas
-- Provider SDK with a mock licensed provider and disabled-by-default GZMovie adapter boundary
+- Provider SDK with GZMovie as the active catalogue backbone and a mock licensed provider fallback
 - Prisma schema and initial SQL migration for the core data model
 - Docker Compose for Postgres, Redis, mail mock, web, and worker services
 - OpenAPI, ADRs, threat model, SLOs, launch checklist, and runbooks
@@ -22,7 +22,7 @@ This first milestone creates the application foundation:
 
 ## Legal and security stance
 
-CineNova defaults to mock licensed content and denies playback/downloads unless rights and entitlement checks pass. GZMovie is treated as an optional server-only provider adapter and is disabled by default. The app must never expose provider keys, signed provider URLs, cookies, or authorization headers to browser bundles, logs, analytics, database records, or error responses.
+CineNova uses GZMovie as its active catalogue backbone and denies playback/downloads unless rights and entitlement checks pass (the mock provider is the fallback for local development). The app must never expose provider keys, signed provider URLs, cookies, or authorization headers to browser bundles, logs, analytics, database records, or error responses. GZMovie credentials are server-only and stored in a secret manager.
 
 ## Local setup
 
@@ -51,7 +51,8 @@ apps/worker              background worker placeholder
 packages/ui              design system components
 packages/domain          domain entities, policies, and errors
 packages/contracts       Zod schemas and typed API contracts
-packages/provider-sdk    provider ports, mock provider, GZMovie adapter boundary
+packages/provider-sdk    provider ports, GZMovie adapter (active), mock provider fallback
+packages/db              PostgreSQL repository adapters (session/profile/device/audit/user)
 packages/config          environment validation
 packages/observability   structured logger and redaction helpers
 infra/                   Docker, Kubernetes, and Terraform templates
