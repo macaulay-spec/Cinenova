@@ -1,0 +1,282 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CineNova Master Build Prompt</title><style>body{margin:0;background:#0b0d12;color:#f5f0e8;font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}.wrap{max-width:1100px;margin:auto;padding:32px}h1{margin:0 0 6px}p{color:#c9c5bf}.bar{position:sticky;top:12px;display:flex;gap:12px;align-items:center;background:#171a22;padding:12px 16px;border:1px solid #363a45;border-radius:12px;margin:22px 0}button{border:0;border-radius:8px;background:#e46b4a;color:#fff;font-weight:700;padding:11px 16px;cursor:pointer}button:hover{background:#f27b5a}#status{color:#b9e8c4;font-weight:600}textarea{box-sizing:border-box;width:100%;height:72vh;resize:vertical;background:#11141b;color:#f5f0e8;border:1px solid #363a45;border-radius:12px;padding:20px;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre}</style></head><body><main class="wrap"><h1>CineNova Master Build Prompt</h1><p>Select the text below or use <strong>Copy entire prompt</strong>. Nothing is sent anywhere; copying runs locally in this page.</p><div class="bar"><button id="copy">Copy entire prompt</button><span id="status" aria-live="polite"></span></div><textarea id="prompt" readonly spellcheck="false"># CineNova — Master AI Build Prompt
+
+## Role and delivery contract
+You are a principal product engineer, staff UX designer, security architect, SRE, data engineer, and QA lead. Design and implement **CineNova**, a global, premium, multi-tenant-ready streaming platform. Produce a production-oriented monorepo, documentation, tests, infrastructure definitions, and an incremental implementation plan—not a throwaway demo.
+
+**Hard legal/security boundaries**
+- Display, stream, download, or ingest only media for which the platform has valid rights for the user, territory, time window, and entitlement.
+- GZMovie is an optional third-party provider adapter, not the system of record and not a permanent dependency. Do not guess, scan for, or use undocumented/hidden endpoints.
+- Never expose provider keys, source credentials, signed source URLs, cookies, or authorization headers to browser bundles, logs, error responses, analytics, git, or database records.
+- Do not build generic URL proxying, DRM circumvention, geo-restriction bypassing, paywall bypassing, or downloader features for arbitrary third-party URLs.
+- Offline download must be enabled only where `offlineDownloadAllowed=true`, entitlement and territory are valid, and the delivery mechanism is permitted by the rights holder. Default deny.
+- Create a DRM abstraction, but do **not** claim DRM works unless an actual licensed DRM integration has been configured and verified.
+
+---
+
+## 1. Executive Summary
+Build CineNova as a polished streaming platform for web, PWA, and future native/TV clients. It provides secure identity and profiles, a rights-aware catalogue, discovery, search, recommendations, playback, authorized offline downloads, subscriptions, editorial controls, observability, and operational resilience. The initial release uses mock licensed content by default and can enable a server-only GZMovie adapter only after legal approval.
+
+## 2. Product Vision
+Deliver a cinematic, fast, accessible, personalized experience that makes licensed content effortless to discover, watch, resume, save, and manage across devices. Be provider-neutral, privacy-conscious, globally localizable, and reliable by design.
+
+## 3. Engineering Principles
+1. Rights, privacy, and security before growth.
+2. Default deny for playback, downloads, data access, and admin operations.
+3. Domain-first clean architecture; providers are adapters.
+4. Progressive delivery over big-bang releases.
+5. Accessible, responsive, low-bandwidth-resilient experiences.
+6. Observable systems with explicit SLOs and operational ownership.
+7. Strong typing, validation, tests, and backward-compatible API contracts.
+8. Cache metadata; never treat signed media URLs as durable data.
+9. Optimize cost with measurement, not assumptions.
+10. Use feature flags for risky rollout and immediate rollback.
+
+## 4. Functional Requirements
+- Public discovery: home rails, trending, genres, search, title pages, share/deep links.
+- Account system: email/social sign-in, profiles, parental PINs, sessions, devices, preferences.
+- Playback: entitled playback, resume, seasons/episodes, subtitles, audio, quality, PiP, casting hooks.
+- Library: My List, history, continue watching, ratings/reviews where enabled.
+- Commerce: plans, subscriptions, invoices, payment provider abstraction, webhooks.
+- Administration: catalogue, rights, editorial rails, provider health, users, devices, audit trail.
+- Operations: background jobs, analytics, moderation, monitoring, alerting, incidents.
+- Localization, theme engine, keyboard shortcuts, PWA support, notifications, and accessibility.
+
+## 5. Non-Functional Requirements
+- WCAG 2.2 AA minimum; keyboard and screen-reader complete.
+- P95 cached catalogue API &lt;300ms in primary region; P95 search &lt;600ms; target LCP &lt;2.5s on representative mobile.
+- Availability targets: catalogue 99.9%, playback-session service 99.95%, admin 99.5% monthly, excluding provider-origin outages tracked separately.
+- Horizontal scalability, stateless application nodes, zero-downtime migrations where feasible.
+- Strong tenant/data isolation, encrypted transit/storage, least privilege, auditability.
+- RPO &lt;= 15 minutes and RTO &lt;= 4 hours for production data unless a stricter business tier is selected.
+
+## 6. Success Metrics (KPIs)
+Track acquisition conversion, activation (first successful play), search success rate, time-to-first-play, playback-start success, rebuffer/error rate, completion rate, weekly retention, watchlist conversion, content discovery diversity, subscription conversion/churn, support contacts per 1,000 sessions, accessibility defects, SLO attainment, error-budget burn, cost per playback minute, and rights-denial accuracy.
+
+## 7. User Personas
+- Guest explorer: browses and evaluates the service.
+- Subscriber: watches across devices, expects resume and recommendations.
+- Parent: manages child profiles, maturity restrictions, and device limits.
+- Editorial manager: curates rails, artwork, trailers, and campaigns.
+- Rights manager: controls region/date/plan/download availability.
+- Support agent: assists users via read-only, audited tooling.
+- Platform operator: owns provider health, releases, incidents, and security.
+
+## 8. User Stories
+Write acceptance criteria for every story. Include: search by title; filter movies/series; inspect a title; select season/episode; play an entitled title; resume; choose captions/audio/quality; save/remove My List; rate/review under moderation policy; create/switch PIN-protected profile; manage devices; subscribe/cancel; request an authorized download; receive download expiry; admin publishes/suppresses title; rights manager blocks a territory; operator observes a provider failure.
+
+## 9. User Journey Maps
+Create maps with happy path, empty state, latency state, error state, and recovery for: onboarding, first playback, returning/resume playback, title unavailable, search no-results, plan purchase, parental restriction, device-limit reached, offline download, subtitle failure, provider outage, account recovery, and copyright report.
+
+## 10. Information Architecture
+Public: `/`, `/browse`, `/search`, `/movies`, `/series`, `/genres/[slug]`, `/title/[slug]`, `/watch/[id]`, `/plans`, `/sign-in`, `/sign-up`, `/legal/*`, `/support`.
+Authenticated: `/profiles`, `/my-list`, `/history`, `/downloads`, `/account/*`, `/notifications`.
+Admin: `/admin`, `/admin/catalog`, `/admin/rights`, `/admin/editorial`, `/admin/providers`, `/admin/users`, `/admin/analytics`, `/admin/audit`.
+
+## 11. Feature Matrix
+Produce a matrix by plan (guest/free/standard/premium/admin), client (web/PWA/future TV/mobile), region, profile age rating, and rights status. Every feature must declare availability, entitlement, feature-flag key, rollout status, telemetry events, and fallback behavior.
+
+## 12–18. Design Language, Tokens, Color, Type, Icons, Motion, Responsive Design
+Create a cinematic but original design system; do not copy Netflix trade dress. Use semantic design tokens, CSS variables, Tailwind theme mapping, and light/dark/high-contrast themes.
+- Color: near-black surfaces, warm neutral text, restrained brand accent; minimum AA contrast; never color-only meaning.
+- Typography: Inter/Geist or similarly licensed family; responsive type scale; readable long synopsis copy.
+- Icons: Lucide or equivalent; consistent 20/24px grid; every icon-only control has accessible label.
+- Motion: respect `prefers-reduced-motion`; 120–220ms micro-interactions; avoid autoplay motion and layout jank.
+- Breakpoints: 320, 480, 640, 768, 1024, 1280, 1536, 1920; test touch, keyboard, and remote-control-friendly focus states.
+
+## 19. Accessibility (WCAG 2.2 AA)
+Implement semantic HTML, landmarks, skip links, visible focus, logical focus order, keyboard-operable player controls, accessible dialogs, captions, transcript support where available, contrast validation, error summaries, form labels, target sizes, reduced motion, screen-reader announcements for playback/download state, and automated axe checks plus manual testing.
+
+## 20. UI Component Library
+Create a versioned internal library: AppShell, navigation, ProfileSwitcher, HeroBanner, ContentRail, PosterCard, LandscapeCard, TitleMetadata, SeasonEpisodePicker, VideoPlayer, caption/audio/quality menus, MyListButton, search controls, auth forms, subscription cards, data tables, alert/toast, loading skeletons, empty/error states, admin charts, rights editor, and confirmation dialogs. Document with Storybook.
+
+## 21. Frontend Architecture
+Use Next.js App Router + TypeScript strict + React + Tailwind + shadcn primitives. Use server components for catalogue rendering where appropriate; React Query for client server-state; Zod typed contracts; React Hook Form; Zustand only for small ephemeral UI state. Keep provider calls server-side. Use route-level error/loading boundaries, image optimization, CSP-safe patterns, and no secret-bearing `NEXT_PUBLIC_*` variables.
+
+## 22. Backend Architecture
+Use modular services (NestJS/Fastify or Next route handlers initially), PostgreSQL/Prisma, Redis, BullMQ, object storage, and an API gateway boundary. Modules: Identity, Profiles, Entitlements, Catalogue, Rights, Provider, Playback, Download, Billing, Editorial, Search, Recommendation, Notification, Analytics, Moderation, Audit, Admin, and Observability. Services must be stateless; async work uses queues.
+
+## 23. Clean Architecture Rules
+- Domain interfaces never import HTTP, Prisma, provider, or UI code.
+- Use cases depend on ports; adapters implement ports.
+- DTOs are validated at boundaries; internal domain types are normalized.
+- No provider response shape leaks to public API.
+- No direct database access from controllers/components.
+- Centralize policy decisions (rights, entitlement, profile maturity).
+- Do not couple billing, playback, and provider modules through hidden side effects.
+
+## 24. Coding Standards
+TypeScript strict, ESLint, Prettier, import boundaries, no `any` without documented exception, named errors, result types for expected failures, Zod schemas, structured logs, conventional commits, code review checklist, dependency pinning, secure defaults, and tests for policy logic. Ban secrets in source and prohibit logging raw signed URLs.
+
+## 25–26. Folder and Monorepo Structure
+Use pnpm + Turborepo:
+```text
+apps/web                 Next.js client/BFF
+apps/api                 API service when separated
+apps/worker              BullMQ workers
+apps/admin               optional separate admin client
+packages/ui              design system + Storybook
+packages/domain          entities, policies, ports
+packages/contracts       Zod schemas, generated types
+packages/provider-sdk    provider adapters
+packages/config          eslint, tsconfig, env schemas
+packages/observability   logging, tracing, metrics
+packages/testing         fixtures, mocks, Playwright helpers
+infra/                   Docker, Terraform, Kubernetes/Helm
+ docs/                   ADRs, runbooks, API, architecture
+```
+Use dependency rules that prevent `domain` importing adapters/apps.
+
+## 27–28. API Design and Versioning
+REST JSON API under `/api/v1`; optionally add a GraphQL gateway for read aggregation only after REST is stable. Use OpenAPI 3.1, generated clients, cursor pagination where appropriate, RFC 7807-like structured errors, idempotency keys for payments/download creation, ISO 8601 dates, UUID public IDs, and explicit deprecation headers. Version breaking APIs with `/v2`; support prior major for a published window and publish compatibility notes.
+
+## 29–34. Authentication, Authorization, Profiles, Devices, Sessions, Subscription
+- Auth: passwordless/email + secure password option + social OAuth (Google, Apple, etc. behind adapters). Argon2id, email verification, recovery, MFA-ready design, rate limiting.
+- RBAC: USER, SUPPORT, EDITOR, RIGHTS_MANAGER, ADMIN, OWNER. Add permission-based checks; enforce server-side.
+- Profiles: per-profile language, maturity ceiling, PIN, autoplay, personalization, history; parent controls.
+- Devices: hashed device identity, named devices, last seen, revocation, concurrent stream and download limits.
+- Sessions: HttpOnly Secure SameSite cookies, rotation, revocation, CSRF protections for mutations, session/device binding where appropriate.
+- Subscription: plan catalogue, trials, proration policy, invoices, taxes delegated to payment provider, grace periods, entitlement snapshots.
+
+## 35. Payment Provider Abstraction
+Create `PaymentProvider` port with Stripe/Paystack/Flutterwave-compatible adapters as business requirements dictate. Verify signed webhooks idempotently. Store provider customer/subscription IDs, not card data. Implement webhook retry, reconciliation jobs, billing audit log, and grace/failed-payment state machine.
+
+## 36–46. Catalogue, Metadata, Search, Personalization, Rights
+- Catalogue domain: Title, Season, Episode, Asset, Artwork, Trailer, Genre, Cast, ProviderMapping.
+- Normalize provider fields: stable internal ID, provider ID, `detailPath`, kind, title, synopsis, release date, runtime seconds, genres, country, rating, artwork, subtitle languages, availability. Tolerate null/string/number inconsistencies.
+- Global search: PostgreSQL FTS initially, Meilisearch/OpenSearch adapter for scale; typo tolerance, synonyms, language analyzers, safe filters, autocomplete, ranking telemetry.
+- Recommendations: begin rules-based (genres, completion, saved titles, recency, editorial); feedback loop uses impressions, plays, skips, completion, thumbs rating; avoid sensitive inference; explainable reason labels.
+- Trending: time-decayed, region-aware aggregate using valid views/completions; bot-resistant and privacy-preserving.
+- Continue Watching: per profile/title/episode, update every 15–30s, completion threshold policy, expiration/cleanup.
+- History and Watchlist: user-controlled deletion, retention policy, deduplication.
+- Ratings/reviews: optional, verified watch policy, rate limits, abuse reports, moderation state.
+- Rights: central policy requires active rights, region, date window, plan entitlement, profile rating, stream/download permission. Default deny.
+- Regional availability: derive country carefully from user choice/legal source, support travel policy and explain unavailable content without revealing sensitive rules.
+
+## 47–49. Provider Abstraction and Adapters
+Define `StreamingCatalogProvider` with search, trending, homepage, detail, recommendations, popular searches, hot content, optional live sports, media manifest, stream manifest, health check, and optional authorized download transport. Implement `MockLicensedProviderAdapter` first, then `GZMovieProviderAdapter`, then placeholders for licensed CMS/OTT providers. Add circuit breaker, deadline, validation, retry only for safe metadata GETs, provider health metrics, and feature-flag provider routing.
+
+## 48. GZMovie Provider Adapter
+Server-only, feature-disabled by default:
+```env
+GZMOVIE_ENABLED=false
+GZMOVIE_BASE_URL=https://gzmovieboxapi.septorch.tech
+GZMOVIE_LEGACY_API_KEY=
+GZMOVIE_REQUEST_TIMEOUT_MS=10000
+```
+Support only publicly documented routes:
+- `GET /api/search` — query, subjectType, page, perPage
+- `GET /api/trending` — page, perPage (normalize its observed 0-based behavior)
+- `GET /api/homepage`
+- `GET /api/item-details` — subjectId
+- `GET /api/recommendations` — subjectId, page, perPage
+- `GET /api/popular-searches`
+- `GET /api/hot-movies-series`
+- `GET /api/football` — optional; known to be unreliable/403; never critical path
+- `GET /api/media` — subjectId, detailPath, season, episode
+- `POST /api/stream` — same body
+- `GET /api/proxy` and `GET /api/proxy-download` only as provider transport internals, never browser-accessible generic endpoints.
+
+Validate every response with Zod. Do not persist signed URLs. Never include the provider key in a client response. When this provider produces a source URL, only use it after rights/entitlement checks and host/protocol validation. The legacy key is deprecated, so support key rotation and immediate provider disablement.
+
+## 50–62. Streaming, Download, Player, Captions, Quality, Casting
+- Streaming pipeline: authorize user/profile/title; evaluate rights; resolve fresh manifest; issue short-lived internal playback session; report progress and analytics.
+- Secure playback: no client-supplied arbitrary URL; outbound host allowlist; HTTPS only; reject private/loopback/link-local/metadata targets; signed internal session; concurrency/rate limits; log fingerprints only.
+- DRM: `DrmProvider` abstraction (Widevine/FairPlay/PlayReady capable) with `None` implementation. UI must accurately show whether DRM is active.
+- Download pipeline: only for explicit offline rights; validate subscription, territory, maturity, device, quota, source, and expiry; create `DownloadRecord` and hashed short-lived authorization; permit refresh only while rights remain valid. Provide downloadable files only where legal and supported; otherwise show unavailable.
+- Player: HTML5/video.js/hls.js architecture, keyboard controls, fullscreen, seek, speed, volume, captions, quality, resume, next episode, accessible errors, PiP.
+- Subtitle/audio: normalize tracks, language labels, accessibility descriptions, user default preferences, external VTT only from approved sources.
+- Quality/bandwidth: adaptive bitrate when HLS/DASH is available; otherwise quality menu. Use Network Information API only as a hint; never overpromise.
+- Chromecast/AirPlay: provider-neutral `CastingAdapter`; feature-detect and hide unavailable controls.
+
+## 63–66. PWA, Notifications, Email, Jobs
+PWA uses safe offline shell and cached metadata/artwork only; do not claim offline video unless authorized download implementation exists. Add install UX, update prompt, background sync where supported. Notifications: user opt-in, preferences, quiet hours, unsubscribe. Email: templated transactional service through adapter. Jobs: catalogue sync, artwork processing, rights activation/expiry, recommendation aggregates, webhook retries, email, data deletion, cache warming.
+
+## 67–72. BullMQ, Redis, Cache, CDN, Images, Storage
+- BullMQ queues with retry/backoff, DLQ, idempotency, job tracing, worker autoscaling.
+- Redis: rate limits, cache, sessions as needed, locks, feature flags cache, short-lived playback/download session metadata. Avoid Redis as source of truth.
+- Cache: explicit keys/TTL/tags; distributed invalidation via event bus; stale-while-revalidate for catalogue; never cache private session responses publicly.
+- Multi-CDN abstraction: origin protection, health-aware failover, signed URLs where applicable, cache purge API, regional policy. Do not route around rights restrictions.
+- Images: Next Image, responsive variants, AVIF/WebP, blur placeholders, artwork provenance, alt text.
+- Storage: private buckets by default, encryption, lifecycle policies, quarantine uploads, immutable audit exports where required.
+
+## 73–80. Admin, CMS, Analytics, Events, Logs, Errors
+- Admin dashboard with RBAC, MFA-ready access, provider health, rights, editorial rails, title visibility, user support tools, audit log.
+- Editorial CMS: drafts, review/publish, scheduled rails, localized metadata/artwork, rollback/version history.
+- Analytics: internal event schema and optional warehouse sink; capture impressions, searches, title detail, play lifecycle, quality, errors, subscription funnel, downloads. Respect consent and retention.
+- Internal event bus: typed domain events; message broker abstraction (Redis Streams/NATS/Kafka later).
+- Logging: JSON, trace/request IDs, severity, PII/secrets redaction. Never log passwords, auth tokens, API keys, or complete signed URLs.
+- Audit logs: actor, action, resource, old/new safe summary, IP/device context, immutable retention policy.
+- Error catalog: stable codes such as `AUTH_INVALID`, `RIGHTS_DENIED`, `PROFILE_RESTRICTED`, `PROVIDER_TIMEOUT`, `PROVIDER_AUTH_ERROR`, `PLAYBACK_SOURCE_EXPIRED`, `DOWNLOAD_NOT_ALLOWED`, `RATE_LIMITED`, `VALIDATION_FAILED`, `INTERNAL_ERROR`.
+- Recovery: safe user messages, retry policy by error class, circuit breakers, fallback mock/editorial content, incident linkage.
+
+## 81–89. Security, OWASP, Privacy
+Implement OWASP ASVS-minded controls: CSP with nonce/hash strategy, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, clickjacking defense, secure cookie policy, CSRF protection, SSRF defenses, upload scanning, dependency scanning, SAST/DAST, secret scanning, WAF/CDN controls, least-privilege IAM, secrets manager with rotation, KMS encryption, TLS, field encryption only where warranted, DB encryption at rest, token hashing, and key rotation.
+
+Privacy/GDPR/CCPA-ready: consent preference center, privacy policy, data inventory, purpose limitation, export/delete workflows, retention schedules, DPA/vendor register, age/children compliance assessment, regional data handling, breach process, do-not-sell/share controls when applicable. Obtain counsel; this is engineering support, not legal advice.
+
+## 90–95. Observability, SLOs, Monitoring, Alerts
+Instrument OpenTelemetry traces across gateway, API, DB, Redis, queue, provider, and playback session. Health endpoints: `/health`, `/health/live`, `/health/ready`; readiness validates required dependencies without leaking secrets. Collect RED/USE metrics, business metrics, provider latency/error rate, queue depth, cache hit rate, rights denial, and cost metrics.
+
+Define SLIs/SLOs and error budgets. Alert on symptom and burn rate: high 5xx, failed playback sessions, provider circuit open, queue backlog, DB saturation, cache outage, auth anomalies, rights-policy failures, and elevated cost. Provide dashboards and runbooks. Pager alerts require actionable owner/severity/runbook links.
+
+## 96–100. Data, Indexing, Backup, Scale, HA
+Create Prisma models: User, AuthIdentity, Session, Profile, Device, Plan, Subscription, Entitlement, PaymentEvent, Title, ProviderTitleMapping, Season, Episode, Genre, Artwork, Trailer, ContentRight, WatchlistItem, PlaybackProgress, WatchHistory, Rating, Review, DownloadRecord, DownloadAuthorization, NotificationPreference, FeatureFlagAssignment, ProviderHealthLog, EditorialRail, EditorialRailItem, AnalyticsEvent, AuditLog, ConsentRecord, DataDeletionRequest.
+
+Index foreign keys, profile/title/episode progress, search vectors, rights lookups by title/region/date/plan, event timestamp/tenant, subscriptions, provider mappings, and idempotency keys. Design read replicas for heavy reads; partition analytics/events; use sharding only after measurable need, with tenant/user shard-key ADR. Use PITR backups, encrypted snapshots, restore drills, DR runbook, multi-AZ production DB, and tested failover.
+
+## 101–106. CI/CD, Docker, Kubernetes, IaC, Environments, Flags
+- CI: lint, typecheck, unit/integration/E2E tests, build, dependency/security scan, OpenAPI validation, migration checks.
+- CD: immutable artifacts, signed images, SBOM, staged deployment, smoke tests, rollback.
+- Docker: multi-stage images, non-root user, health checks, compose for local Postgres/Redis/mail mock.
+- Kubernetes-ready manifests/Helm, HPA, PDB, secrets references, network policies, resource limits; do not require K8s for early local dev.
+- IaC: Terraform modules for network, DB, Redis, storage, CDN, secrets, monitoring.
+- Environment schema: local, test, staging, production; validate at boot; production startup fails on missing mandatory secret.
+- Feature flag service: typed flags, targeting, kill switches, audit, expiry, offline defaults, provider routing; no security control may rely solely on a client flag.
+
+## 107. A/B Testing
+Build experiment assignments server-side or via trusted flag service. Include exposure events, hypothesis, owner, guardrail metrics, statistical plan, opt-out/consent treatment, stop conditions, and cleanup date. Never A/B test legal rights enforcement or security controls.
+
+## 108–112. AI Features and Rules
+AI features may include semantic/AI search, recommendation ranking, synopsis translation assistance, editorial metadata suggestions, moderation assistance, and support-agent summarization. AI must be optional, observable, privacy-reviewed, and human-governed. Do not train on user data without explicit legal/privacy basis. AI moderation produces a review signal, not irreversible action without policy/human review where impact is high. AI coding rules: no secrets, no unreviewed schema migration, no security bypass, tests required, cite uncertainty, keep generated code maintainable.
+
+## 113–119. Testing and Resilience
+- Unit: domain policies, normalization, redaction, entitlement, rights, quotas, flag logic.
+- Integration: adapters, DB, Redis, queues, auth, webhooks, provider failures.
+- E2E Playwright: onboarding, profile, search, title, entitled playback mock, resume, parental block, watchlist, download authorization mock, billing mock, admin RBAC, accessibility.
+- Load: home/search/session creation with cache and provider degradation.
+- Stress: saturation, limits, graceful shedding.
+- Chaos: Redis loss, provider timeout, DB replica failover, queue failure, CDN failure, delayed webhook, partial region outage. Run only in controlled environments.
+
+## 120–126. Readiness, Deploy, Launch, Maintenance, Roadmap
+Create checklists for production readiness, deployment, and launch: legal rights verified; privacy/legal pages reviewed; threat model; penetration test; backups restored; monitoring/alerts tested; SLO owner assigned; incident contacts; on-call; rollback; accessibility audit; performance budgets; support training; provider migration plan.
+
+Maintenance: weekly dependency/security review, monthly restore drill, quarterly access review, SLO/error-budget review, rights audit, provider health review, and ADR updates. Upgrade strategy: pinned dependencies, compatibility tests, canary/staging, database expand-migrate-contract. Roadmap: MVP mock/licensed catalogue → subscriptions/personalization → native/TV clients → multi-region/CDN → licensed DRM/casting → advanced ML and partner APIs.
+
+## 127–129. Documentation, OpenAPI, ADRs
+Deliver developer onboarding, local setup, environment guide, architecture diagrams, runbooks, data classification, provider integration guide, API reference generated from OpenAPI 3.1, webhook docs, event taxonomy, design system docs, security model, and incident/DR runbooks. Write ADRs for monorepo, auth/session, provider abstraction, playback security, downloads, database scaling, search, flags, event bus, GraphQL decision, and CDN strategy.
+
+## 130. Final AI Build Instructions
+1. Start with a complete architecture, threat model, ADR list, file tree, and delivery milestones.
+2. Create the monorepo, lint/type/build tooling, Docker Compose, `.env.example`, and mock provider first.
+3. Implement domain contracts and database schema/migrations.
+4. Implement identity, profiles, RBAC, rights/entitlement policies, and audit logs before playback.
+5. Build catalogue/search/title UI against mock legal content.
+6. Implement playback sessions and player against controlled mock video.
+7. Implement GZMovie adapter only behind `GZMOVIE_ENABLED=false` by default, server-side only, with documented endpoints only.
+8. Implement offline downloads only as a rights-gated architecture; leave unavailable when no legally compliant transport exists.
+9. Add billing, CMS, recommendations, analytics, notifications, and admin progressively behind flags.
+10. At every milestone run lint, typecheck, tests, security scan, and build. Report commands, results, known risks, and next steps.
+11. Never fabricate successful DRM, payments, provider availability, legal rights, or security certification.
+12. Produce production-quality code, not pseudo-code; where a third-party credential/service is absent, include a complete mock adapter and clear configuration instructions.
+
+## Required deliverables
+- Source monorepo and modern OOXML/PDF-free text documentation as appropriate.
+- `.env.example` containing placeholders only.
+- Prisma migrations and seed data for mock licensed content.
+- Docker Compose and deployment/IaC templates.
+- OpenAPI specification and generated API reference.
+- Storybook component library.
+- Test suites and CI workflow.
+- ADRs, architecture diagrams, threat model, SLOs, runbooks, launch checklist, and cost model.
+- Explicit list of assumptions, blocked integrations, and legal/provider dependencies.
+</textarea></main><script>const b=document.querySelector('#copy'),t=document.querySelector('#prompt'),s=document.querySelector('#status');b.onclick=async()=>{try{await navigator.clipboard.writeText(t.value);s.textContent='Copied — paste it wherever you need it.'}catch(e){t.focus();t.select();document.execCommand('copy');s.textContent='Selected/copied. Paste it wherever you need it.'}}</script></body></html>
