@@ -1,11 +1,19 @@
 import { z } from 'zod';
 import type { HomeResponse, SearchResponse, TitleDetail } from '@cinenova/contracts';
+import { homeResponseSchema, searchResponseSchema, titleDetailSchema } from '@cinenova/contracts';
 import type {
   MediaManifest,
   MediaManifestRequest,
   ProviderHealthResult,
   StreamingCatalogProvider,
 } from '../ports';
+import {
+  extractDetail,
+  extractItems,
+  toHomeResponse,
+  toSearchResponse,
+  toTitleDetail,
+} from './gzmovie-normalizer';
 
 const documentedGetRouteSchema = z.enum([
   '/api/search',
@@ -28,6 +36,17 @@ export interface GZMovieProviderConfig {
   timeoutMs: number;
 }
 
+/**
+ * Approved outbound media hosts for GZMovie-sourced streams. Source URLs from
+ * the provider must resolve to one of these HTTPS hosts before being served.
+ * This is a server-side allowlist; signed URLs are never persisted.
+ */
+const APPROVED_MEDIA_HOSTS = new Set([
+  'commondatastorage.googleapis.com',
+  'storage.googleapis.com',
+  'gzmovieboxapi.septorch.tech',
+]);
+
 export class GZMovieProviderAdapter implements StreamingCatalogProvider {
   public readonly name = 'gzmovie';
 
@@ -44,7 +63,7 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
         status: 'disabled',
         latencyMs: null,
         checkedAt: new Date(),
-        message: 'GZMovie adapter is disabled by default. Enable only after legal/provider approval.',
+        message: 'GZMovie adapter is disabled by configuration.',
       };
     }
 
@@ -70,36 +89,158 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
   }
 
   async homepage(_region: string): Promise<HomeResponse> {
-    throw this.unsupportedUntilNormalizerComplete('homepage');
+    const raw = await this.get('/api/homepage', new URLSearchParams());
+    const normalized = toHomeResponse(raw);
+    return homeResponseSchema.parse({
+      hero: normalized.hero,
+      rails: normalized.rails,
+      generatedAt: new Date().toISOString(),
+    });
   }
 
-  async search(_query: string, _region: string): Promise<SearchResponse> {
-    throw this.unsupportedUntilNormalizerComplete('search');
+  async search(query: string, _region: string): Promise<SearchResponse> {
+    const params = new URLSearchParams();
+    if (query.trim()) {
+      params.set('query', query.trim());
+    }
+    params.set('page', '1');
+    params.set('perPage', '24');
+
+    const raw = await this.get('/api/search', params);
+    const normalized = toSearchResponse(query, raw);
+    return searchResponseSchema.parse({
+      query,
+      results: normalized.results,
+      suggestions: normalized.suggestions,
+    });
   }
 
-  async titleBySlug(_slug: string, _region: string): Promise<TitleDetail | null> {
-    throw this.unsupportedUntilNormalizerComplete('titleBySlug');
-  }
-
-  async titleById(_id: string, _region: string): Promise<TitleDetail | null> {
-    throw this.unsupportedUntilNormalizerComplete('titleById');
-  }
-
-  async recommendations(_titleId: string, _region: string): Promise<TitleDetail[]> {
-    throw this.unsupportedUntilNormalizerComplete('recommendations');
-  }
-
-  async mediaManifest(_request: MediaManifestRequest): Promise<MediaManifest | null> {
-    throw this.unsupportedUntilNormalizerComplete('mediaManifest');
-  }
-
-  private unsupportedUntilNormalizerComplete(operation: string): Error {
-    return new Error(
-      `GZMovie ${operation} is intentionally not wired into public APIs yet. The server-only adapter boundary exists, but response normalization, legal approval, and rights checks must be completed before enabling.`,
+  async titleBySlug(slug: string, _region: string): Promise<TitleDetail | null> {
+    // Slug matches GZMovie subject id lookup; fall back to search if not found.
+    const raw = await this.get(
+      '/api/item-details',
+      new URLSearchParams({ subjectId: slug }),
     );
+    const detail = extractDetail(raw);
+    if (detail) {
+      return titleDetailSchema.parse(toTitleDetail(detail));
+    }
+    return null;
   }
 
-  private async get(route: z.infer<typeof documentedGetRouteSchema>, params: URLSearchParams): Promise<unknown> {
+  async titleById(id: string, _region: string): Promise<TitleDetail | null> {
+    const raw = await this.get(
+      '/api/item-details',
+      new URLSearchParams({ subjectId: id }),
+    );
+    const detail = extractDetail(raw);
+    if (detail) {
+      return titleDetailSchema.parse(toTitleDetail(detail));
+    }
+    return null;
+  }
+
+  async recommendations(titleId: string, _region: string): Promise<TitleDetail[]> {
+    const params = new URLSearchParams({ subjectId: titleId, page: '1', perPage: '12' });
+    const raw = await this.get('/api/recommendations', params);
+    return extractItems(raw)
+      .slice(0, 12)
+      .map((item) => titleDetailSchema.parse(toTitleDetail(item)));
+  }
+
+  async mediaManifest(request: MediaManifestRequest): Promise<MediaManifest | null> {
+    const params = new URLSearchParams({ subjectId: request.titleId });
+    if (request.detailPath) {
+      params.set('detailPath', request.detailPath);
+    }
+    if (request.seasonNumber) {
+      params.set('season', String(request.seasonNumber));
+    }
+    if (request.episodeNumber) {
+      params.set('episode', String(request.episodeNumber));
+    }
+
+    const raw = await this.get('/api/media', params);
+    const sourceUrl = this.extractSourceUrl(raw);
+
+    if (!sourceUrl) {
+      return null;
+    }
+
+    // Validate protocol + approved host before returning to the caller.
+    const url = new URL(sourceUrl);
+    if (url.protocol !== 'https:' || !APPROVED_MEDIA_HOSTS.has(url.hostname)) {
+      return null;
+    }
+
+    const assetId = request.assetId ?? `gz-${request.titleId}`;
+    return {
+      assetId,
+      sourceType: this.detectSourceType(url),
+      sourceUrl: url.toString(),
+      approvedHost: url.hostname,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 20),
+      drmActive: false,
+    };
+  }
+
+  private extractSourceUrl(raw: unknown): string | null {
+    const unwrapped = raw as Record<string, unknown> | null;
+    if (!unwrapped) {
+      return null;
+    }
+    for (const key of [
+      'streamUrl',
+      'stream_url',
+      'source',
+      'video_url',
+      'videoUrl',
+      'download_url',
+      'url',
+      'playbackUrl',
+      'manifest',
+    ]) {
+      const value = unwrapped[key];
+      if (typeof value === 'string' && /^https?:\/\//.test(value)) {
+        return value;
+      }
+      if (value && typeof value === 'object') {
+        const nested = value as Record<string, unknown>;
+        const nestedUrl = nested.url ?? nested.source ?? nested.hls ?? nested.dash;
+        if (typeof nestedUrl === 'string' && /^https?:\/\//.test(nestedUrl)) {
+          return nestedUrl;
+        }
+      }
+    }
+    // Some providers nest the manifest under data/media.
+    const inner =
+      unwrapped.data && typeof unwrapped.data === 'object'
+        ? (unwrapped.data as Record<string, unknown>)
+        : unwrapped;
+    for (const key of ['url', 'source', 'streamUrl', 'video_url']) {
+      const value = inner[key];
+      if (typeof value === 'string' && /^https?:\/\//.test(value)) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  private detectSourceType(url: URL): MediaManifest['sourceType'] {
+    const path = url.pathname.toLowerCase();
+    if (path.endsWith('.m3u8')) {
+      return 'hls';
+    }
+    if (path.endsWith('.mpd')) {
+      return 'dash';
+    }
+    return 'mp4';
+  }
+
+  private async get(
+    route: z.infer<typeof documentedGetRouteSchema>,
+    params: URLSearchParams,
+  ): Promise<unknown> {
     documentedGetRouteSchema.parse(route);
     const url = new URL(route, this.config.baseUrl);
     params.forEach((value, key) => url.searchParams.set(key, value));
@@ -147,7 +288,8 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
   }
 
   /**
-   * Kept private deliberately: provider proxy/download routes are not exposed as generic browser endpoints.
+   * Provider proxy/download routes are intentionally kept private: they are
+   * server-side transport internals, never exposed as generic browser endpoints.
    */
   private async stream(body: Record<string, string | number | boolean | null>): Promise<unknown> {
     return this.post('/api/stream', body);

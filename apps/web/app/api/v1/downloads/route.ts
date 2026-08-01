@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { createDownloadRequestSchema, downloadRecordSchema } from '@cinenova/contracts';
-import { evaluateDownload } from '@cinenova/domain';
-import { MOCK_RIGHTS } from '@cinenova/provider-sdk';
+import { evaluateDownload, rightsFromTitle } from '@cinenova/domain';
 import { getCatalogProvider } from '../../../../lib/providers';
 import { problemResponse, validationProblem } from '../../../../lib/problem';
 import { requireCsrf } from '../../../../lib/csrf-guard';
@@ -41,7 +40,7 @@ export async function POST(request: Request) {
       maturityRating: title.maturityRating,
       assetId,
     },
-    rights: MOCK_RIGHTS,
+    rights: [rightsFromTitle(title)],
     entitlement: principal.entitlement,
     profile: principal.profile,
     territory: parsed.data.territory,

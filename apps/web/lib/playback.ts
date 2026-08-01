@@ -5,14 +5,14 @@ import {
   type PlaybackSource,
   type TitleDetail,
 } from '@cinenova/contracts';
-import { evaluateRights, type PolicyDecision } from '@cinenova/domain';
-import { MOCK_RIGHTS } from '@cinenova/provider-sdk';
+import { evaluateRights, rightsFromTitle, type PolicyDecision } from '@cinenova/domain';
 import type { LocalPrincipal } from './local-principal';
 import { getCatalogProvider } from './providers';
 
 const APPROVED_MEDIA_HOSTS = new Set([
   'commondatastorage.googleapis.com',
   'storage.googleapis.com',
+  'gzmovieboxapi.septorch.tech',
 ]);
 
 export interface PlaybackSessionResult {
@@ -41,7 +41,7 @@ export async function createPlaybackSession(
       maturityRating: title.maturityRating,
       assetId,
     },
-    rights: MOCK_RIGHTS,
+    rights: [rightsFromTitle(title)],
     entitlement: principal.entitlement,
     profile: principal.profile,
     territory: request.territory,

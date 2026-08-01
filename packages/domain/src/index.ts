@@ -8,3 +8,4 @@ export * from './policies/entitlement';
 export * from './policies/rbac';
 export * from './policies/profile';
 export * from './policies/rights';
+export * from './policies/rights-from-title';

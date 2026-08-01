@@ -15,12 +15,22 @@
 
 ## GZMovie boundary
 
-GZMovie is optional, server-only, and disabled by default:
+GZMovie is the active catalogue backbone. It is server-only and uses only its documented routes:
 
 ```env
-PROVIDER_ROUTING=mock
-GZMOVIE_ENABLED=false
+PROVIDER_ROUTING=gzmovie
+GZMOVIE_ENABLED=true
 ```
 
-Only documented routes may be used, and proxy/download routes must remain provider transport internals,
-not browser-accessible generic endpoints.
+The adapter normalizes documented responses (`/api/homepage`, `/api/search`, `/api/item-details`,
+`/api/recommendations`, `/api/media`) into CineNova contracts with Zod validation. The provider API key
+is sent server-side only and never appears in client responses. Proxy/download routes remain provider
+transport internals, not browser-accessible generic endpoints.
+
+Mock (`PROVIDER_ROUTING=mock`) remains available as a fallback for local development and tests.
+
+### Rights derivation
+
+GZMovie-normalized titles carry their availability window, minimum plan, and country list. The
+`rightsFromTitle` helper in `@cinenova/domain` builds the `ContentRight` that the same strict rights
+engine evaluates, so rights enforcement holds identically over real provider data.

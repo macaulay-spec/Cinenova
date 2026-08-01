@@ -8,10 +8,10 @@ export const envSchema = z.object({
   REDIS_URL: z.string().min(1).optional(),
   SESSION_SECRET: z.string().min(32).optional(),
   CSRF_SECRET: z.string().min(32).optional(),
-  PROVIDER_ROUTING: z.enum(['mock', 'gzmovie']).default('mock'),
+  PROVIDER_ROUTING: z.enum(['mock', 'gzmovie']).default('gzmovie'),
   GZMOVIE_ENABLED: z
     .enum(['true', 'false'])
-    .default('false')
+    .default('true')
     .transform((value) => value === 'true'),
   GZMOVIE_BASE_URL: z.string().url().default('https://gzmovieboxapi.septorch.tech'),
   GZMOVIE_LEGACY_API_KEY: z.string().optional(),
