@@ -11,7 +11,14 @@ interface SearchPageProps {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const query = resolvedSearchParams.q ?? '';
-  const search = await getCatalogProvider().search(query, 'NG');
+  let search: Awaited<ReturnType<ReturnType<typeof getCatalogProvider>['search']>> | null = null;
+  let providerError = false;
+
+  try {
+    search = await getCatalogProvider().search(query, 'NG');
+  } catch {
+    providerError = true;
+  }
 
   return (
     <AppShell active="search">
@@ -21,8 +28,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <Badge>Discovery</Badge>
             <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">Search CineNova</h1>
             <p className="max-w-2xl text-cinenova-muted">
-              Search runs against the mock licensed catalogue and can later move to PostgreSQL FTS,
-              Meilisearch, or OpenSearch behind the same contract.
+              Search runs against the live provider catalogue. Results are rights-filtered and
+              cached briefly at the edge.
             </p>
           </div>
           <form action="/search" className="relative max-w-3xl">
@@ -34,12 +41,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               className="min-h-14 w-full rounded-full border border-white/10 bg-white/8 pl-14 pr-5 text-base text-white outline-none transition placeholder:text-cinenova-muted focus:border-cinenova-accent focus:ring-2 focus:ring-cinenova-accent/40"
             />
           </form>
-          {query ? (
+          {query && search ? (
             <p className="text-sm text-cinenova-muted">
               {search.results.length} result{search.results.length === 1 ? '' : 's'} for “{query}”
             </p>
           ) : null}
-          {search.suggestions.length > 0 ? (
+          {search && search.suggestions.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {search.suggestions.map((suggestion) => (
                 <a
@@ -52,7 +59,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               ))}
             </div>
           ) : null}
-          {search.results.length > 0 ? (
+          {providerError ? (
+            <div className="rounded-[2rem] border border-amber/30 bg-amber/10 p-8 text-center">
+              <h2 className="text-2xl font-black text-white">Search is temporarily unavailable</h2>
+              <p className="mt-2 text-cinenova-muted">
+                The catalogue service did not respond. Please try again shortly. No provider keys or
+                internal details are exposed.
+              </p>
+            </div>
+          ) : search && search.results.length > 0 ? (
             <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {search.results.map((title) => (
                 <PosterCard key={title.id} title={title} href={`/title/${title.slug}`} className="min-w-0" />
@@ -62,8 +77,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="rounded-[2rem] border border-white/10 bg-white/6 p-8 text-center">
               <h2 className="text-2xl font-black text-white">No results yet</h2>
               <p className="mt-2 text-cinenova-muted">
-                Try “Lagos”, “sci-fi”, or “family adventure”. No-results recovery is part of the
-                product flow.
+                Try another title, genre, or mood. Results come from the live provider catalogue.
               </p>
             </div>
           )}
