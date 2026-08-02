@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "npx pnpm@9.15.4 turbo run build --filter=@cinenova/web",
   "installCommand": "npx pnpm@9.15.4 install --no-frozen-lockfile",
-  "outputDirectory": "apps/web/.next"
+  "buildCommand": "npx next build",
+  "outputDirectory": ".next"
 }
