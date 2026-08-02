@@ -35,10 +35,13 @@ export function parseEnv(input: NodeJS.ProcessEnv): CineNovaEnv {
   }
 
   const env = parsed.data;
-  if (env.NODE_ENV === 'production') {
+  // In production, when PostgreSQL persistence is enabled, the DB + session
+  // secrets are mandatory. For an in-memory demo deployment (no database),
+  // these may be omitted so the app runs out-of-the-box; session tokens are
+  // random and CSRF has a local fallback. Real deployments must set them.
+  if (env.NODE_ENV === 'production' && env.PERSISTENCE === 'postgres') {
     const missing = [
       ['DATABASE_URL', env.DATABASE_URL],
-      ['REDIS_URL', env.REDIS_URL],
       ['SESSION_SECRET', env.SESSION_SECRET],
       ['CSRF_SECRET', env.CSRF_SECRET],
     ].filter(([, value]) => !value);
