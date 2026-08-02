@@ -1,4 +1,4 @@
-import { AppShell, ContentRail, Hero } from '@cinenova/ui';
+import { AppShell, ContentRail, Hero, StateCard } from '@cinenova/ui';
 import { getCatalogProvider } from '../lib/providers';
 
 export const dynamic = 'force-dynamic';
@@ -17,14 +17,15 @@ export default async function HomePage() {
     return (
       <AppShell active="home">
         <section className="flex min-h-screen items-center justify-center px-4 pt-20">
-          <div className="max-w-xl rounded-md border border-border bg-surface p-10 text-center">
-            <p className="eyebrow">Catalogue</p>
-            <h1 className="mt-3 font-display text-2xl text-foreground">Warming up</h1>
-            <p className="mt-3 text-sm text-muted">
-              The catalogue could not be reached. Please refresh shortly. No provider keys or internal
-              details are exposed.
-            </p>
-          </div>
+          <StateCard
+            kind="offline"
+            title="Catalogue unavailable"
+            description="We could not reach the catalogue. Refresh shortly. No provider keys or internal details are exposed."
+          >
+            <a href="/" className="rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:opacity-80">
+              Retry
+            </a>
+          </StateCard>
         </section>
       </AppShell>
     );

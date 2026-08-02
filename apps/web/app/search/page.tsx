@@ -1,4 +1,4 @@
-import { AppShell, PosterCard } from '@cinenova/ui';
+import { AppShell, PosterCard, StateCard } from '@cinenova/ui';
 import { SlidersHorizontal } from 'lucide-react';
 import { getCatalogProvider } from '../../lib/providers';
 import { SearchAutocomplete } from '../../components/search-autocomplete';
@@ -75,10 +75,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
           {/* Results */}
           {providerError ? (
-            <div className="rounded-md border border-border bg-surface p-8 text-center">
-              <h2 className="font-display text-xl text-foreground">Search is unavailable</h2>
-              <p className="mt-2 text-sm text-muted">The catalogue did not respond. Try again shortly.</p>
-            </div>
+            <StateCard
+              kind="error"
+              title="Search is unavailable"
+              description="The catalogue did not respond. Try again shortly."
+            >
+              <a href="/search" className="rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:opacity-80">
+                Retry
+              </a>
+            </StateCard>
           ) : search && search.results.length > 0 ? (
             <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
               {search.results.map((title) => (
@@ -86,13 +91,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               ))}
             </div>
           ) : (
-            <div className="rounded-md border border-border bg-surface p-10 text-center">
-              <h2 className="font-display text-xl text-foreground">No titles match that search</h2>
-              <p className="mt-2 text-sm text-muted">
-                Try different spelling, browse by genre, or note that some titles may not be available
-                in your territory.
-              </p>
-            </div>
+            <StateCard
+              kind="empty"
+              title="No titles match that search"
+              description="Try different spelling, browse by genre, or note that some titles may not be available in your territory."
+            >
+              <a href="/" className="rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:opacity-80">
+                Browse titles
+              </a>
+            </StateCard>
           )}
         </div>
       </section>

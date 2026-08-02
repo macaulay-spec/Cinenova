@@ -2,16 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ArrowLeft, Download, MoreHorizontal, Play, Plus } from 'lucide-react';
+import { ArrowLeft, Download, MoreHorizontal, Play } from 'lucide-react';
 import { AnchorButton, ContentRail, RatingStars, Tabs } from '@cinenova/ui';
 import type { TitleDetail } from '@cinenova/contracts';
+import { MyListToggle } from './my-list-toggle';
 
 type SectionId = 'overview' | 'episodes' | 'more';
 
 export function TitleDetailView({ title, recs }: { title: TitleDetail; recs: TitleDetail[] }) {
   const router = useRouter();
   const [section, setSection] = useState<SectionId>(title.kind === 'series' ? 'episodes' : 'overview');
-  const [saved, setSaved] = useState(false);
 
   const heroArt = title.artwork.find((a) => a.kind === 'hero' || a.kind === 'landscape') ?? title.artwork[0];
 
@@ -54,13 +54,16 @@ export function TitleDetailView({ title, recs }: { title: TitleDetail; recs: Tit
             <AnchorButton href={`/watch/${title.id}`} variant="primary">
               <Play aria-hidden="true" className="mr-2 h-4 w-4 fill-current" /> Play
             </AnchorButton>
-            <button
-              type="button"
-              onClick={() => setSaved((s) => !s)}
-              className="inline-flex items-center rounded-md bg-white/5 px-5 py-2.5 text-sm font-bold text-foreground ring-1 ring-inset ring-border hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-            >
-              <Plus aria-hidden="true" className="mr-2 h-4 w-4" /> {saved ? 'In My List' : 'My List'}
-            </button>
+            <MyListToggle
+              item={{
+                id: title.id,
+                title: title.title,
+                slug: title.slug,
+                ...(title.artwork[0]?.url ? { posterUrl: title.artwork[0].url } : {}),
+                year: title.releaseYear,
+                kind: title.kind,
+              }}
+            />
             {title.offlineDownloadAllowed ? (
               <AnchorButton href="/downloads" variant="ghost">
                 <Download aria-hidden="true" className="mr-2 h-4 w-4" /> Download

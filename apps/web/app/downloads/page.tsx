@@ -1,25 +1,42 @@
 'use client';
 
 import { AppShell, Switch } from '@cinenova/ui';
-import { Pause, Trash2, Wifi } from 'lucide-react';
+import { AlertTriangle, Check, Pause, Play } from 'lucide-react';
 import { useState } from 'react';
 
 interface DownloadRow {
+  id: string;
   name: string;
   meta: string;
-  status: string;
+  status: 'downloading' | 'complete' | 'expired' | 'queued';
   progress: number;
-  expired?: boolean;
+  size: string;
+  detail: string;
 }
 
-const MOCK_DOWNLOADS: DownloadRow[] = [
-  { name: 'The Avengers', meta: '2h 21m · 1080p', status: '1.2 GB · 64% downloaded', progress: 64 },
-  { name: 'Squid Game S1:E1', meta: '58m · 720p', status: 'Completed · expires in 6 days', progress: 100 },
-  { name: 'Inception', meta: '2h 28m · 1080p', status: 'Expired — renew rights to redownload', progress: 100, expired: true },
+const INITIAL: DownloadRow[] = [
+  { id: 'd1', name: 'Genesis', meta: '58m · 720p', status: 'downloading', progress: 64, size: '1.2 GB', detail: '64% downloaded' },
+  { id: 'd2', name: 'Supergirl', meta: '1h 42m · 1080p', status: 'complete', progress: 100, size: '2.4 GB', detail: 'Completed · expires in 6 days' },
+  { id: 'd3', name: 'Inception', meta: '2h 28m · 1080p', status: 'expired', progress: 100, size: '3.1 GB', detail: 'Expired — renew rights to redownload' },
+  { id: 'd4', name: 'Colony', meta: '2h 02m · 720p', status: 'queued', progress: 0, size: '1.1 GB', detail: 'Queued · waiting on Wi-Fi' },
 ];
+
+const STATUS_TEXT: Record<DownloadRow['status'], string> = {
+  downloading: 'Downloading',
+  complete: 'Complete',
+  expired: 'Expired',
+  queued: 'Queued',
+};
 
 export default function DownloadsPage() {
   const [smart, setSmart] = useState(true);
+  const [downloads, setDownloads] = useState<DownloadRow[]>(INITIAL);
+
+  function togglePause(id: string) {
+    setDownloads((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, status: d.status === 'downloading' ? 'queued' : d.status === 'queued' ? 'downloading' : d.status } : d)),
+    );
+  }
 
   return (
     <AppShell active="downloads">
@@ -31,8 +48,7 @@ export default function DownloadsPage() {
           <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface p-5">
             <div className="min-w-0">
               <p className="text-sm font-bold text-foreground">Smart Downloads</p>
-              <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
-                <Wifi aria-hidden="true" className="h-3.5 w-3.5" />
+              <p className="mt-1 text-xs text-muted">
                 {smart ? 'On · Wi-Fi only' : 'Off'}
               </p>
             </div>
@@ -41,41 +57,56 @@ export default function DownloadsPage() {
 
           {/* Download list */}
           <div className="divide-y divide-border rounded-md border border-border bg-surface">
-            {MOCK_DOWNLOADS.map((download) => (
-              <div key={download.name} className="flex items-center gap-4 p-3">
+            {downloads.map((d) => (
+              <div key={d.id} className="flex items-center gap-4 p-3">
                 <div className="h-12 w-20 shrink-0 rounded-sm bg-secondary" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-foreground">{download.name}</p>
-                  <p className="text-xs text-muted">{download.meta}</p>
+                  <p className="truncate text-sm font-bold text-foreground">{d.name}</p>
+                  <p className="text-xs text-muted">{d.meta}</p>
                   <div className="mt-1.5 h-1 rounded-full bg-secondary">
                     <div
-                      className={`h-full rounded-full ${download.expired ? 'bg-muted' : 'bg-primary'}`}
-                      style={{ width: `${download.progress}%` }}
+                      className={`h-full rounded-full ${d.status === 'expired' ? 'bg-muted' : 'bg-primary'}`}
+                      style={{ width: `${d.progress}%` }}
                     />
                   </div>
-                  <p className={`mt-1 text-xs ${download.expired ? 'text-muted' : 'text-muted'}`}>
-                    {download.status}
+                  <p className="mt-1 text-xs text-muted">
+                    {d.status === 'expired' ? 'Expired' : `${d.size} · ${d.detail}`}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  aria-label={download.expired ? `Delete ${download.name}` : `Pause ${download.name}`}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full ring-1 ring-inset ring-border text-muted hover:text-foreground"
-                >
-                  {download.expired ? (
-                    <Trash2 aria-hidden="true" className="h-4 w-4" />
-                  ) : download.progress === 100 ? (
-                    <Trash2 aria-hidden="true" className="h-4 w-4" />
-                  ) : (
-                    <Pause aria-hidden="true" className="h-4 w-4" />
-                  )}
-                </button>
+                <div className="flex shrink-0 items-center gap-2 text-xs text-muted" aria-live="polite">
+                  <span
+                    className={
+                      d.status === 'complete'
+                        ? 'inline-flex items-center gap-1 text-success'
+                        : d.status === 'expired'
+                          ? 'inline-flex items-center gap-1 text-danger'
+                          : 'inline-flex items-center gap-1'
+                    }
+                  >
+                    {d.status === 'complete' ? <Check aria-hidden="true" className="h-3.5 w-3.5" /> : d.status === 'expired' ? <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> : null}
+                    {STATUS_TEXT[d.status]}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`${d.status === 'downloading' ? 'Pause' : d.status === 'queued' ? 'Resume' : 'Delete'} ${d.name}`}
+                    onClick={() => (d.status === 'downloading' || d.status === 'queued' ? togglePause(d.id) : undefined)}
+                    className="grid h-9 w-9 place-items-center rounded-full ring-1 ring-inset ring-border text-muted hover:text-foreground"
+                  >
+                    {d.status === 'downloading' ? (
+                      <Pause aria-hidden="true" className="h-4 w-4" />
+                    ) : d.status === 'queued' ? (
+                      <Play aria-hidden="true" className="h-4 w-4" />
+                    ) : (
+                      <Check aria-hidden="true" className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
 
           <div className="flex items-center justify-between text-xs text-muted">
-            <span>3 titles · 4.1 GB used</span>
+            <span>{downloads.length} titles · 7.8 GB used</span>
             <span>Downloads require a valid entitlement and expire per rights window.</span>
           </div>
         </div>
