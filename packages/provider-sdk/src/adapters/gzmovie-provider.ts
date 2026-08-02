@@ -320,10 +320,35 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
       });
 
       if (!response.ok) {
+        // Log the failure server-side with a redacted reason. Never log the key
+        // or the full signed URL.
+        console.error(
+          JSON.stringify({
+            level: 'error',
+            message: 'ZST LABS provider request failed',
+            path: url.pathname,
+            status: response.status,
+            provider: this.name,
+            time: new Date().toISOString(),
+          }),
+        );
         throw new Error(`Documented ZST LABS endpoint failed with status ${response.status}.`);
       }
 
       return z.unknown().parse(await response.json());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'unknown error';
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          message: 'ZST LABS provider request error',
+          path: url.pathname,
+          reason: message,
+          provider: this.name,
+          time: new Date().toISOString(),
+        }),
+      );
+      throw err;
     } finally {
       clearTimeout(timeout);
     }
