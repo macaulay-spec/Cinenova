@@ -13,19 +13,26 @@
 9. Add integration tests with mocked provider failures.
 10. Roll out behind a server-side feature flag.
 
-## GZMovie boundary
+## ZST LABS (GZMovie) boundary
 
-GZMovie is the active catalogue backbone. It is server-only and uses only its documented routes:
+ZST LABS is the active catalogue backbone (base URL `https://zstlab.cyou`). It is server-only and uses
+only its documented routes:
 
 ```env
 PROVIDER_ROUTING=gzmovie
 GZMOVIE_ENABLED=true
+GZMOVIE_BASE_URL=https://zstlab.cyou
+GZMOVIE_LEGACY_API_KEY=your-zst-api-key
 ```
 
-The adapter normalizes documented responses (`/api/homepage`, `/api/search`, `/api/item-details`,
-`/api/recommendations`, `/api/media`) into CineNova contracts with Zod validation. The provider API key
-is sent server-side only and never appears in client responses. Proxy/download routes remain provider
-transport internals, not browser-accessible generic endpoints.
+The adapter sends the key via the `x-api-key` header (server-side only) and normalizes documented
+responses (`/api/homepage`, `/api/search`, `/api/item-details`, `/api/recommendations`, `/api/media`,
+`POST /api/stream`) into CineNova contracts with Zod validation. Titles are keyed by `subjectId` and
+`detailPath` (used as the CineNova id and slug respectively). Streaming source URLs are signed and
+short-lived mp4s on an approved CDN; they are validated for HTTPS + approved host and never persisted.
+
+The API key must live in a secret manager / local `.env` and never in git, logs, error responses, or
+browser bundles. `GZMOVIE_LEGACY_API_KEY` is kept as the env name for compatibility.
 
 Mock (`PROVIDER_ROUTING=mock`) remains available as a fallback for local development and tests.
 

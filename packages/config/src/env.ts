@@ -14,7 +14,7 @@ export const envSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((value) => value === 'true'),
-  GZMOVIE_BASE_URL: z.string().url().default('https://gzmovieboxapi.septorch.tech'),
+  GZMOVIE_BASE_URL: z.string().url().default('https://zstlab.cyou'),
   GZMOVIE_LEGACY_API_KEY: z.string().optional(),
   GZMOVIE_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   PAYMENT_PROVIDER: z.enum(['mock', 'stripe', 'paystack', 'flutterwave']).default('mock'),

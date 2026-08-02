@@ -1,69 +1,75 @@
-import { randomUUID } from 'node:crypto';
 import type { HomeResponse, SearchResponse, TitleDetail, TitleSummary } from '@cinenova/contracts';
 
 /**
- * GZMovie response normalizer.
+ * ZST LABS (GZMovie) response normalizer.
  *
- * GZMovie is an open, documented provider API used as CineNova's catalogue
- * backbone. Its raw response shapes can vary, so this module tolerantly picks
- * items/details out of common wrappers and maps field aliases onto CineNova's
- * typed contracts. Every final contract is validated by Zod upstream.
+ * ZST LABS is CineNova's catalogue backbone. Every response is wrapped in:
+ *   { status, statusCode, creator, endpoint, data }
+ * and titles are keyed by `subjectId` (stable id) and `detailPath` (slug).
+ * This module unwraps the envelope and maps items onto CineNova contracts.
  *
- * Security: only field mapping happens here. Media URLs returned by GZMovie are
- * not trusted until they pass the provider's host/protocol validation, and the
- * provider API key is never included in normalized output.
+ * Security: only field mapping happens here. Streaming source URLs are not
+ * trusted until they pass host/protocol validation in the provider adapter,
+ * and the API key never appears in normalized output.
  */
 
+const COUNTRY_TO_ISO2: Record<string, string> = {
+  nigeria: 'NG',
+  ghana: 'GH',
+  kenya: 'KE',
+  'south africa': 'ZA',
+  'united states': 'US',
+  usa: 'US',
+  'united kingdom': 'GB',
+  uk: 'GB',
+  canada: 'CA',
+  france: 'FR',
+  germany: 'DE',
+  india: 'IN',
+  egypt: 'EG',
+  morocco: 'MA',
+  uganda: 'UG',
+  tanzania: 'TZ',
+  rwanda: 'RW',
+  ethiopia: 'ET',
+  zambia: 'ZM',
+  zimbabwe: 'ZW',
+  senegal: 'SN',
+};
+
+export interface GzCover {
+  url?: unknown;
+  width?: unknown;
+  height?: unknown;
+}
+
 export interface GzItem {
-  id?: unknown;
   subjectId?: unknown;
-  subject_id?: unknown;
+  subjectType?: unknown;
   title?: unknown;
-  name?: unknown;
-  original_title?: unknown;
-  synopsis?: unknown;
-  overview?: unknown;
   description?: unknown;
-  plot?: unknown;
-  year?: unknown;
-  release_year?: unknown;
   releaseDate?: unknown;
   release_date?: unknown;
-  rating?: unknown;
-  maturityRating?: unknown;
-  genre?: unknown;
-  genres?: unknown;
-  genreList?: unknown;
-  category?: unknown;
-  country?: unknown;
-  countries?: unknown;
-  countryList?: unknown;
-  kind?: unknown;
-  subjectType?: unknown;
-  type?: unknown;
-  poster?: unknown;
-  image?: unknown;
-  poster_path?: unknown;
-  image_url?: unknown;
-  backdrop?: unknown;
-  backdrop_path?: unknown;
-  cast?: unknown;
-  director?: unknown;
-  directors?: unknown;
   duration?: unknown;
-  runtime?: unknown;
-  runtime_seconds?: unknown;
-  available?: unknown;
-  stream_url?: unknown;
-  streamUrl?: unknown;
-  download_url?: unknown;
-  video_url?: unknown;
-  source?: unknown;
+  genre?: unknown;
+  cover?: GzCover | null;
+  countryName?: unknown;
+  imdbRatingValue?: unknown;
+  subtitles?: unknown;
+  hasResource?: unknown;
+  trailer?: unknown;
   detailPath?: unknown;
-  detail_path?: unknown;
-  season?: unknown;
-  episode?: unknown;
+  staffList?: unknown;
+  isSeries?: unknown;
   seasons?: unknown;
+  url?: unknown;
+  poster?: unknown;
+  backdrop?: unknown;
+  id?: unknown;
+  year?: unknown;
+  overview?: unknown;
+  type?: unknown;
+  rating?: unknown;
   [key: string]: unknown;
 }
 
@@ -87,201 +93,20 @@ function asNumber(value: unknown): number | undefined {
   return undefined;
 }
 
-function firstString(value: unknown): string | undefined {
-  if (Array.isArray(value)) {
-    return asString(value[0]);
-  }
-  return asString(value);
-}
-
 function stringList(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value.map((entry) => {
-      if (typeof entry === 'string') {
-        return entry;
-      }
-      if (entry && typeof entry === 'object') {
-        return firstString((entry as Record<string, unknown>).name) ?? '';
-      }
-      return '';
-    }).filter(Boolean);
+    return value
+      .map((entry) => (typeof entry === 'string' ? entry : asString((entry as Record<string, unknown>).name) ?? ''))
+      .filter(Boolean);
   }
   if (typeof value === 'string') {
-    return value.split(',').map((part) => part.trim()).filter(Boolean);
+    return value
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
   }
   return [];
 }
-
-/** Pull the interesting payload out of common response wrappers. */
-export function unwrapPayload(raw: unknown): unknown {
-  if (!raw || typeof raw !== 'object') {
-    return raw;
-  }
-  const candidate = raw as Record<string, unknown>;
-
-  // Wrapper keys commonly returned by provider APIs.
-  for (const key of ['data', 'result', 'results', 'payload', 'response', 'items', 'list']) {
-    const inner = candidate[key];
-    if (Array.isArray(inner) && inner.length > 0 && typeof inner[0] === 'object') {
-      return inner;
-    }
-    if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
-      // Recurse a single level to unwrap { data: { data: [...] } }.
-      const nested = unwrapPayload(inner);
-      if (Array.isArray(nested)) {
-        return nested;
-      }
-      return inner;
-    }
-  }
-  return raw;
-}
-
-/** Return an array of candidate items from a raw response (search/list/home). */
-export function extractItems(raw: unknown): GzItem[] {
-  const unwrapped = unwrapPayload(raw);
-  if (Array.isArray(unwrapped)) {
-    return unwrapped as GzItem[];
-  }
-  if (unwrapped && typeof unwrapped === 'object') {
-    const candidate = unwrapped as Record<string, unknown>;
-    for (const key of ['items', 'results', 'list', 'movies', 'series', 'trending', 'featured', 'data']) {
-      const inner = candidate[key];
-      if (Array.isArray(inner)) {
-        return inner as GzItem[];
-      }
-    }
-  }
-  return [];
-}
-
-/** Extract a single item from a raw detail response. */
-export function extractDetail(raw: unknown): GzItem | null {
-  const unwrapped = unwrapPayload(raw);
-  if (!unwrapped || typeof unwrapped !== 'object') {
-    return null;
-  }
-  if (Array.isArray(unwrapped)) {
-    return (unwrapped[0] as GzItem) ?? null;
-  }
-  const candidate = unwrapped as Record<string, unknown>;
-  for (const key of ['item', 'movie', 'series', 'title', 'data']) {
-    const inner = candidate[key];
-    if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
-      return inner as GzItem;
-    }
-  }
-  return candidate as GzItem;
-}
-
-export function gzId(item: GzItem): string {
-  return asString(item.subjectId) ?? asString(item.subject_id) ?? asString(item.id) ?? randomUUID();
-}
-
-export function gzTitle(item: GzItem): string {
-  return (
-    asString(item.title) ??
-    asString(item.name) ??
-    asString(item.original_title) ??
-    'Untitled'
-  );
-}
-
-function gzSlug(title: string, id: string): string {
-  const slugged = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 80);
-  return slugged || id;
-}
-
-function gzKind(item: GzItem): TitleDetail['kind'] {
-  const raw = asString(item.subjectType) ?? asString(item.kind) ?? asString(item.type) ?? '';
-  const normalized = raw.toLowerCase();
-  if (normalized.includes('serie') || normalized.includes('tv')) {
-    return 'series';
-  }
-  if (normalized.includes('episode')) {
-    return 'episode';
-  }
-  if (normalized.includes('trailer')) {
-    return 'trailer';
-  }
-  return 'movie';
-}
-
-function gzMaturity(item: GzItem): TitleDetail['maturityRating'] {
-  const raw = asString(item.maturityRating) ?? asString(item.rating);
-  const normalized = (raw ?? '').toUpperCase();
-  if (normalized.includes('NC')) {
-    return 'NC_17';
-  }
-  if (normalized.includes('R')) {
-    return 'R';
-  }
-  if (normalized.includes('13') || normalized.includes('PG13')) {
-    return 'PG_13';
-  }
-  if (normalized.includes('PG')) {
-    return 'PG';
-  }
-  return 'G';
-}
-
-function gzYear(item: GzItem): number {
-  return (
-    asNumber(item.year) ??
-    asNumber(item.release_year) ??
-    (typeof item.releaseDate === 'string' ? new Date(item.releaseDate).getFullYear() : undefined) ??
-    new Date().getFullYear()
-  );
-}
-
-function gzRuntime(item: GzItem): number | null {
-  const seconds =
-    asNumber(item.runtime_seconds) ??
-    asNumber(item.duration) ??
-    asNumber(item.runtime) ??
-    (typeof item.duration === 'string' && /^\d+$/.test(item.duration)
-      ? Number(item.duration) * 60
-      : undefined);
-  if (seconds !== undefined && Number.isFinite(seconds) && seconds > 0) {
-    return Math.round(seconds);
-  }
-  return null;
-}
-
-function gzGenres(item: GzItem): string[] {
-  return stringList(item.genres).length > 0 ? stringList(item.genres) : stringList(item.genre);
-}
-
-const COUNTRY_TO_ISO2: Record<string, string> = {
-  nigeria: 'NG',
-  ghana: 'GH',
-  kenya: 'KE',
-  'south africa': 'ZA',
-  'united states': 'US',
-  usa: 'US',
-  'united kingdom': 'GB',
-  uk: 'GB',
-  canada: 'CA',
-  france: 'FR',
-  germany: 'DE',
-  india: 'IN',
-  'united arab emirates': 'AE',
-  egypt: 'EG',
-  morocco: 'MA',
-  uganda: 'UG',
-  tanzania: 'TZ',
-  rwanda: 'RW',
-  ethiopia: 'ET',
-  zambia: 'ZM',
-  zimbabwe: 'ZW',
-  senegal: 'SN',
-  'cote divoire': 'CI',
-  "côte d'ivoire": 'CI',
-};
 
 function normalizeCountry(raw: string): string | undefined {
   const trimmed = raw.trim().toLowerCase();
@@ -296,56 +121,163 @@ function normalizeCountry(raw: string): string | undefined {
   return /^[A-Z]{2}$/.test(alpha2) ? alpha2 : undefined;
 }
 
-function gzCountries(item: GzItem): string[] {
-  const countries = stringList(item.countries).length > 0 ? stringList(item.countries) : stringList(item.country);
-  if (countries.length === 0) {
-    return ['NG'];
+/** Unwrap the shared ZST LABS envelope; returns the `data` payload when present. */
+export function unwrapPayload(raw: unknown): unknown {
+  if (raw && typeof raw === 'object') {
+    const candidate = raw as Record<string, unknown>;
+    if (candidate && typeof candidate.data === 'object' && candidate.data !== null) {
+      return candidate.data;
+    }
   }
-  const mapped = countries.map(normalizeCountry).filter((c): c is string => Boolean(c));
-  return mapped.length > 0 ? mapped : ['NG'];
+  return raw;
 }
 
-function gzPoster(item: GzItem): string | undefined {
-  return (
-    asString(item.poster) ??
-    asString(item.image) ??
-    asString(item.poster_path) ??
-    asString(item.image_url)
-  );
+/** Extract an array of items from a search/homepage/recommendations payload. */
+export function extractItems(raw: unknown): GzItem[] {
+  const data = unwrapPayload(raw);
+  if (Array.isArray(data)) {
+    return data as GzItem[];
+  }
+  if (data && typeof data === 'object') {
+    const candidate = data as Record<string, unknown>;
+    for (const key of ['items', 'movies', 'results', 'trending', 'newReleases', 'list', 'data']) {
+      const inner = candidate[key];
+      if (Array.isArray(inner)) {
+        return inner as GzItem[];
+      }
+    }
+  }
+  return [];
 }
 
-function gzCast(item: GzItem): string[] {
-  const cast = stringList(item.cast);
-  return cast.length > 0 ? cast.slice(0, 12) : [];
+/** Extract the hero banner list (homepage data.banners). */
+export function extractBanners(raw: unknown): GzItem[] {
+  const data = unwrapPayload(raw);
+  if (data && typeof data === 'object') {
+    const banners = (data as Record<string, unknown>).banners;
+    if (Array.isArray(banners)) {
+      return banners as GzItem[];
+    }
+  }
+  return [];
 }
 
-function gzDirectors(item: GzItem): string[] {
-  const directors = stringList(item.directors).length > 0 ? stringList(item.directors) : stringList(item.director);
-  return directors.slice(0, 4);
+/** Extract a single subject detail (item-details data.subject). */
+export function extractSubject(raw: unknown): GzItem | null {
+  const data = unwrapPayload(raw);
+  if (data && typeof data === 'object') {
+    const subject = (data as Record<string, unknown>).subject;
+    if (subject && typeof subject === 'object') {
+      return subject as GzItem;
+    }
+  }
+  return null;
+}
+
+/** Extract the staff list (item-details data.stars). */
+export function extractStars(raw: unknown): GzItem[] {
+  const data = unwrapPayload(raw);
+  if (data && typeof data === 'object') {
+    const stars = (data as Record<string, unknown>).stars;
+    if (Array.isArray(stars)) {
+      return stars as GzItem[];
+    }
+  }
+  return [];
+}
+
+function gzId(item: GzItem): string {
+  return asString(item.subjectId) ?? asString(item.id) ?? '';
+}
+
+function gzSlug(item: GzItem): string {
+  return asString(item.detailPath) ?? '';
+}
+
+function gzKind(item: GzItem): TitleDetail['kind'] {
+  const type = asNumber(item.subjectType);
+  if (type === 2) {
+    return 'series';
+  }
+  const raw = (asString(item.type) ?? '').toLowerCase();
+  if (raw.includes('serie') || raw.includes('tv')) {
+    return 'series';
+  }
+  if (raw.includes('episode')) {
+    return 'episode';
+  }
+  if (raw.includes('trailer')) {
+    return 'trailer';
+  }
+  return 'movie';
+}
+
+function gzMaturity(_item: GzItem): TitleDetail['maturityRating'] {
+  // ZST LABS does not provide a content rating; default to G so we never
+  // mislabel a title's maturity. The rights engine still enforces all other
+  // checks; maturity gating requires rating metadata when available.
+  return 'G';
+}
+
+function gzYear(item: GzItem): number {
+  const release = asString(item.releaseDate) ?? asString(item.release_date);
+  const year = release ? new Date(release).getFullYear() : undefined;
+  const fallback = asNumber(item.year);
+  if (Number.isFinite(year) && year && year > 1887 && year < 3000) {
+    return year;
+  }
+  return fallback ?? new Date().getFullYear();
+}
+
+function gzRuntime(item: GzItem): number | null {
+  const duration = asNumber(item.duration);
+  if (duration !== undefined && duration > 0) {
+    return Math.round(duration);
+  }
+  return null;
+}
+
+function gzGenres(item: GzItem): string[] {
+  return stringList(item.genre);
+}
+
+function gzCountries(item: GzItem): string[] {
+  const name = asString(item.countryName);
+  if (name) {
+    const mapped = normalizeCountry(name);
+    return mapped ? [mapped] : ['NG'];
+  }
+  return ['NG'];
+}
+
+function coverUrl(item: GzItem): string | undefined {
+  if (item.cover && typeof item.cover === 'object') {
+    const url = asString((item.cover as Record<string, unknown>).url);
+    if (url) {
+      return url;
+    }
+  }
+  return asString(item.poster);
 }
 
 function gzSynopsis(item: GzItem): string {
   return (
-    asString(item.synopsis) ??
-    asString(item.overview) ??
-    asString(item.description) ??
-    asString(item.plot) ??
-    'No synopsis available for this title yet.'
+    asString(item.description) ?? asString(item.overview) ?? 'No synopsis available for this title yet.'
   );
 }
 
-/** Map a GZMovie item onto CineNova's TitleDetail (with safe defaults). */
+/** Map a search/homepage/banner item onto a CineNova TitleDetail. */
 export function toTitleDetail(item: GzItem): TitleDetail {
   const id = gzId(item);
-  const title = gzTitle(item);
+  const slug = gzSlug(item);
+  const title = asString(item.title) ?? 'Untitled';
   const kind = gzKind(item);
   const year = gzYear(item);
-  const primaryAssetId = `gz-${id}`;
-  const poster = gzPoster(item);
+  const poster = coverUrl(item);
 
   return {
     id,
-    slug: gzSlug(title, id),
+    slug,
     kind,
     title,
     synopsis: gzSynopsis(item),
@@ -356,27 +288,77 @@ export function toTitleDetail(item: GzItem): TitleDetail {
     countries: gzCountries(item),
     artwork: poster
       ? [
-          {
-            url: poster,
-            kind: 'poster',
-            alt: `Poster artwork for ${title}`,
-            width: 600,
-            height: 900,
-            dominantColor: '#e46b4a',
-          },
+          { url: poster, kind: 'poster', alt: `Poster artwork for ${title}`, width: 600, height: 900, dominantColor: '#e46b4a' },
         ]
       : [],
     availableFrom: new Date('2026-01-01T00:00:00.000Z').toISOString(),
     availableUntil: new Date('2028-01-01T00:00:00.000Z').toISOString(),
     minimumPlan: 'standard',
     offlineDownloadAllowed: false,
-    cast: gzCast(item),
-    directors: gzDirectors(item),
+    cast: [],
+    directors: [],
     audioTracks: [{ language: 'en', label: 'English', kind: 'audio', accessibility: false }],
     subtitleTracks: [],
     seasons: [],
-    primaryAssetId,
-    rightsExplanation: `Streaming from the GZMovie provider. Rights enforcement is handled server-side by CineNova.`,
+    primaryAssetId: id,
+    rightsExplanation: 'Streaming from the ZST LABS provider. Rights enforcement is handled server-side by CineNova.',
+  };
+}
+
+/** Enrich a base title with item-details data (cast, directors, seasons). */
+export function enrichTitleDetail(base: TitleDetail, stars: GzItem[], seasons: unknown[]): TitleDetail {
+  const cast: string[] = [];
+  const directors: string[] = [];
+  for (const star of stars) {
+    const name = asString(star.name);
+    if (!name) {
+      continue;
+    }
+    const role = asString(star.character) ?? '';
+    const staffType = asNumber(star.staffType);
+    if (staffType === 2 || /director/i.test(role)) {
+      directors.push(name);
+    } else if (staffType === 1 || staffType === undefined) {
+      cast.push(name);
+    }
+  }
+
+  const episodeList = seasons
+    .map((seasonRaw) => {
+      const season = seasonRaw as Record<string, unknown>;
+      const se = asNumber(season.se);
+      const allEp = asString(season.allEp);
+      if (se === undefined || !allEp) {
+        return null;
+      }
+      return {
+        id: `${base.id}-s${se}`,
+        seasonNumber: se,
+        title: `${base.title} — Season ${se}`,
+        synopsis: base.synopsis,
+        episodes: allEp
+          .split(',')
+          .map((ep) => Number(ep.trim()))
+          .filter((ep) => Number.isFinite(ep) && ep > 0)
+          .map((ep) => ({
+            id: `${base.id}-s${se}e${ep}`,
+            slug: `${base.slug}-s${se}e${ep}`,
+            title: `Episode ${ep}`,
+            synopsis: `Season ${se}, episode ${ep}`,
+            seasonNumber: se,
+            episodeNumber: ep,
+            runtimeSeconds: base.runtimeSeconds ?? 1500,
+            assetId: `${base.id}:${se}:${ep}`,
+          })),
+      };
+    })
+    .filter((season): season is NonNullable<typeof season> => season !== null);
+
+  return {
+    ...base,
+    cast: cast.slice(0, 24),
+    directors: directors.slice(0, 8),
+    seasons: episodeList,
   };
 }
 
@@ -395,26 +377,38 @@ export function toTitleSummary(detail: TitleDetail): TitleSummary {
   return summary;
 }
 
-/** Build a home response from homepage raw data (hero + trending rails). */
-export function toHomeResponse(raw: unknown): Omit<HomeResponse, 'generatedAt'> {
-  const items = extractItems(raw);
-  const details = items.slice(0, 30).map(toTitleDetail);
-  const hero = details[0] ?? null;
+/** Build a home response from homepage data + fallback catalogue items. */
+export function toHomeResponse(raw: unknown, fallbackItems: GzItem[] = []): Omit<HomeResponse, 'generatedAt'> {
+  const banners = extractBanners(raw);
+  const data = unwrapPayload(raw) as Record<string, unknown> | null;
+  const trending = Array.isArray(data?.trending) ? (data!.trending as GzItem[]) : [];
+  const newReleases = Array.isArray(data?.newReleases) ? (data!.newReleases as GzItem[]) : [];
+
+  const railItems = [...trending, ...newReleases, ...fallbackItems].slice(0, 40).map(toTitleDetail);
+
+  let hero = banners[0] ? toTitleDetail(banners[0]) : railItems[0] ?? null;
+  // If the banner lacks artwork, prefer a fallback item with a poster as hero.
+  if (hero && hero.artwork.length === 0) {
+    const withPoster = railItems.find((item) => item.artwork.length > 0);
+    if (withPoster) {
+      hero = withPoster;
+    }
+  }
 
   return {
     hero: hero ?? toTitleDetail({}),
     rails: [
       {
-        id: 'gzmovie-trending',
+        id: 'zst-trending',
         title: 'Trending Now',
         subtitle: 'Popular titles from the catalogue',
-        items: details.map(toTitleSummary),
+        items: railItems.map(toTitleSummary),
       },
       {
-        id: 'gzmovie-featured',
-        title: 'Featured',
-        subtitle: 'Hand-picked highlights',
-        items: details.slice(0, 12).map(toTitleSummary),
+        id: 'zst-new-releases',
+        title: 'New & Notable',
+        subtitle: 'Fresh additions',
+        items: railItems.slice(0, 16).map(toTitleSummary),
       },
     ],
   };

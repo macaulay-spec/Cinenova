@@ -1,71 +1,154 @@
 import { describe, expect, it } from 'vitest';
-import { extractDetail, extractItems, toHomeResponse, toSearchResponse, toTitleDetail } from '../adapters/gzmovie-normalizer';
+import {
+  enrichTitleDetail,
+  extractItems,
+  extractSubject,
+  toHomeResponse,
+  toSearchResponse,
+  toTitleDetail,
+} from '../adapters/gzmovie-normalizer';
+
+// Fixtures based on real ZST LABS responses.
+const searchResponse = {
+  status: true,
+  statusCode: 200,
+  creator: 'Godszeal (ZST LABS)',
+  endpoint: '/api/search',
+  data: {
+    pager: { hasMore: true },
+    items: [
+      {
+        subjectId: '5608459269503862552',
+        subjectType: 1,
+        title: 'AVENGERS',
+        description: '',
+        releaseDate: '2025-08-24',
+        duration: 0,
+        genre: 'yoruba',
+        cover: { url: 'https://pbcdnw.aoneroom.com/image/2026/03/30/x.jpg', width: 1280, height: 720 },
+        countryName: 'Nigeria',
+        imdbRatingValue: '0',
+        detailPath: 'avengers-QExqQyMNiG6',
+      },
+      {
+        subjectId: '5154075108704669480',
+        subjectType: 1,
+        title: 'The Avengers',
+        description: '',
+        releaseDate: '2012-05-04',
+        duration: 8580,
+        genre: 'Action,Sci-Fi',
+        cover: { url: 'https://pbcdnw.aoneroom.com/image/2026/01/27/y.jpg' },
+        countryName: 'United States',
+        imdbRatingValue: '8.0',
+        detailPath: 'the-avengers-ChBgfByIJ86',
+      },
+      {
+        subjectId: '8454918444612471512',
+        subjectType: 2,
+        title: 'Avengers Assemble S1-S5',
+        releaseDate: '2013-05-26',
+        duration: 0,
+        genre: 'Animation,Action,Adventure',
+        cover: { url: 'https://pbcdnw.aoneroom.com/image/z.jpg' },
+        countryName: 'United States',
+        detailPath: 'avengers-assemble-WH7r7AcCz4a',
+      },
+    ],
+  },
+};
+
+const homepageResponse = {
+  status: true,
+  statusCode: 200,
+  endpoint: '/api/homepage',
+  data: {
+    banners: [{ subjectId: '758465225426354376', title: 'Genesis', detailPath: 'genesis-MStWSChM1U' }],
+    trending: [],
+    newReleases: [],
+  },
+};
+
+const itemDetailsResponse = {
+  status: true,
+  statusCode: 200,
+  endpoint: '/api/item-details',
+  subjectId: '758465225426354376',
+  data: {
+    subject: {
+      subjectId: '758465225426354376',
+      subjectType: 2,
+      title: 'Genesis',
+      description: 'A gospel queen faces chaos.',
+      releaseDate: '2025-04-21',
+      duration: 0,
+      genre: 'Drama',
+      cover: { url: 'https://pbcdnw.aoneroom.com/image/c.jpg' },
+      countryName: 'South Africa',
+      imdbRatingValue: '9.1',
+      detailPath: 'genesis-MStWSChM1U',
+      isSeries: true,
+    },
+    stars: [
+      { staffId: '1', staffType: 2, name: 'Luthando Mngomezulu', character: 'Director' },
+      { staffId: '2', staffType: 1, name: 'Baby Cele', character: 'Felicia' },
+    ],
+    seasons: [{ se: 1, maxEp: 260, allEp: '1,2,3' }],
+  },
+};
 
 describe('gzmovie normalizer', () => {
-  it('extracts items from a wrapped list response', () => {
-    const raw = {
-      data: [
-        { subjectId: 's1', title: 'Alpha', genres: ['Action'] },
-        { subjectId: 's2', title: 'Beta', genres: ['Drama'] },
-      ],
-    };
-    const items = extractItems(raw);
-    expect(items).toHaveLength(2);
+  it('extracts items from a search response', () => {
+    const items = extractItems(searchResponse);
+    expect(items).toHaveLength(3);
   });
 
-  it('extracts items from a top-level results key', () => {
-    const raw = { results: [{ id: 's1', name: 'Gamma' }] };
-    expect(extractItems(raw)).toHaveLength(1);
-  });
-
-  it('extracts a single detail from a wrapped response', () => {
-    const raw = { data: { subjectId: 's9', title: 'Delta' } };
-    const detail = extractDetail(raw);
-    expect(detail?.subjectId).toBe('s9');
-    expect(detail?.title).toBe('Delta');
-  });
-
-  it('maps a GZMovie item onto a TitleDetail', () => {
-    const detail = toTitleDetail({
-      subjectId: 's1',
-      title: 'Lagos Nights',
-      overview: 'A story set in Lagos.',
-      release_year: 2024,
-      runtime: 110,
-      genres: ['Drama', 'Thriller'],
-      country: 'Nigeria',
-      poster: 'https://example.com/poster.jpg',
-      cast: ['Actor One', 'Actor Two'],
-    });
-    expect(detail.title).toBe('Lagos Nights');
+  it('maps a search item onto a TitleDetail', () => {
+    const detail = toTitleDetail(extractItems(searchResponse)[1]!);
+    expect(detail.id).toBe('5154075108704669480');
+    expect(detail.slug).toBe('the-avengers-ChBgfByIJ86');
+    expect(detail.title).toBe('The Avengers');
     expect(detail.kind).toBe('movie');
-    expect(detail.maturityRating).toBe('G');
-    expect(detail.genres).toEqual(['Drama', 'Thriller']);
-    expect(detail.countries).toEqual(['NG']);
-    expect(detail.artwork[0]?.url).toBe('https://example.com/poster.jpg');
-    expect(detail.primaryAssetId).toBe('gz-s1');
-    expect(detail.cast).toEqual(['Actor One', 'Actor Two']);
+    expect(detail.genres).toEqual(['Action', 'Sci-Fi']);
+    expect(detail.countries).toEqual(['US']);
+    expect(detail.runtimeSeconds).toBe(8580);
+    expect(detail.releaseYear).toBe(2012);
+    expect(detail.artwork[0]?.url).toBe('https://pbcdnw.aoneroom.com/image/2026/01/27/y.jpg');
   });
 
-  it('detects series kind', () => {
-    const detail = toTitleDetail({ subjectId: 's3', name: 'The River', subjectType: 'series' });
+  it('detects series from subjectType 2', () => {
+    const detail = toTitleDetail(extractItems(searchResponse)[2]!);
     expect(detail.kind).toBe('series');
   });
 
-  it('builds a home response with hero and rails', () => {
-    const home = toHomeResponse({
-      data: [{ subjectId: 'a', title: 'One' }, { subjectId: 'b', title: 'Two' }],
-    });
-    expect(home.hero.title).toBe('One');
-    expect(home.rails.length).toBeGreaterThan(0);
-    expect(home.rails[0]?.items.length).toBe(2);
+  it('builds a search response', () => {
+    const search = toSearchResponse('Avengers', searchResponse);
+    expect(search.results).toHaveLength(3);
+    expect(search.suggestions).toContain('The Avengers');
   });
 
-  it('builds a search response', () => {
-    const search = toSearchResponse('lag', {
-      results: [{ subjectId: 'x', title: 'Lagos', genres: ['Action'] }],
-    });
-    expect(search.results[0]?.title).toBe('Lagos');
-    expect(search.suggestions).toContain('Lagos');
+  it('builds a home response with hero and rails from fallback items', () => {
+    const home = toHomeResponse(homepageResponse, extractItems(searchResponse));
+    expect(home.hero.title).toBe('AVENGERS'); // banner has no artwork, hero picks first fallback with poster
+    expect(home.rails.length).toBeGreaterThan(0);
+    expect(home.rails[0]?.items.length).toBe(3);
+  });
+
+  it('extracts a subject from item-details', () => {
+    const subject = extractSubject(itemDetailsResponse);
+    expect(subject?.title).toBe('Genesis');
+    expect(subject?.detailPath).toBe('genesis-MStWSChM1U');
+  });
+
+  it('enriches a title with cast, directors, and seasons', () => {
+    const base = toTitleDetail(extractSubject(itemDetailsResponse)!);
+    const stars = itemDetailsResponse.data.stars;
+    const seasons = itemDetailsResponse.data.seasons;
+    const detail = enrichTitleDetail(base, stars, seasons);
+    expect(detail.kind).toBe('series');
+    expect(detail.directors).toContain('Luthando Mngomezulu');
+    expect(detail.cast).toContain('Baby Cele');
+    expect(detail.seasons[0]?.episodes).toHaveLength(3);
+    expect(detail.seasons[0]?.episodes[0]?.assetId).toBe('758465225426354376:1:1');
   });
 });

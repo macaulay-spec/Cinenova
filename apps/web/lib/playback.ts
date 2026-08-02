@@ -10,9 +10,9 @@ import type { LocalPrincipal } from './local-principal';
 import { getCatalogProvider } from './providers';
 
 const APPROVED_MEDIA_HOSTS = new Set([
+  'bcdnxw.hakunaymatata.com',
   'commondatastorage.googleapis.com',
   'storage.googleapis.com',
-  'gzmovieboxapi.septorch.tech',
 ]);
 
 export interface PlaybackSessionResult {
@@ -58,7 +58,7 @@ export async function createPlaybackSession(
     };
   }
 
-  const manifest = await provider.mediaManifest({ titleId: title.id, assetId });
+  const manifest = await provider.mediaManifest({ titleId: title.id, assetId, detailPath: title.slug });
   if (!manifest) {
     return {
       source: null,

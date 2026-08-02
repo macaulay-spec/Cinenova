@@ -23,7 +23,7 @@ export function getCatalogProvider(): StreamingCatalogProvider {
 
     provider = new GZMovieProviderAdapter(
       env.GZMOVIE_LEGACY_API_KEY
-        ? { ...gzMovieConfig, legacyApiKey: env.GZMOVIE_LEGACY_API_KEY }
+        ? { ...gzMovieConfig, apiKey: env.GZMOVIE_LEGACY_API_KEY }
         : gzMovieConfig,
     );
     return provider;
