@@ -19,8 +19,10 @@ const config: Config = {
         secondary: 'var(--secondary)',
         muted: 'var(--muted-foreground)',
         border: 'var(--border)',
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
         gold: 'var(--gold)',
-        ember: 'var(--ember)',
       },
       backgroundImage: {
         'gradient-hero': 'var(--gradient-hero)',

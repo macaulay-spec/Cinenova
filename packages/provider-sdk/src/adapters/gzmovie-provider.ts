@@ -25,6 +25,8 @@ const documentedGetRouteSchema = z.enum([
   '/api/recommendations',
   '/api/trending',
   '/api/new-releases',
+  '/api/hot-movies-series',
+  '/api/popular-searches',
   '/api/media',
 ]);
 
@@ -95,11 +97,17 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
   async homepage(_region: string): Promise<HomeResponse> {
     const raw = await this.get('/api/homepage', new URLSearchParams());
     // The real homepage nests content in operatingList[].banner.items[] (not a
-    // top-level items array). Only fire a search fallback when there are NO
-    // banners, and never with an empty query (which the API rejects with 400).
+    // top-level items array). Supplement the rails with trending + hot content
+    // so the home shows real discovery data, not an empty page.
     const banners = extractBanners(raw);
+
+    // Enrich the home rails with trending + hot movies/series (best-effort).
+    const trending = await this.trendingItems();
+    const hot = await this.hotItems();
+
+    const extra = [...trending, ...hot];
     let fallbackItems = [] as Record<string, unknown>[];
-    if (banners.length === 0) {
+    if (banners.length === 0 && extra.length === 0) {
       try {
         const searchRaw = await this.get(
           '/api/search',
@@ -113,13 +121,44 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
 
     const bannerItems = banners.map((b) => b);
     this.indexItems(bannerItems as Record<string, unknown>[]);
-    this.indexItems(fallbackItems);
-    const normalized = toHomeResponse(raw, fallbackItems);
+    this.indexItems([...extra, ...fallbackItems]);
+    const normalized = toHomeResponse(raw, [...extra, ...fallbackItems]);
     return homeResponseSchema.parse({
       hero: normalized.hero,
       rails: normalized.rails,
       generatedAt: new Date().toISOString(),
     });
+  }
+
+  /** Fetch `/api/trending` and normalize its `subjectList` into items. */
+  private async trendingItems(): Promise<Record<string, unknown>[]> {
+    try {
+      const raw = await this.get('/api/trending', new URLSearchParams({ page: '1', perPage: '18' }));
+      const data = raw && typeof raw === 'object' ? (raw as Record<string, unknown>).data : undefined;
+      const list =
+        data && typeof data === 'object'
+          ? (data as Record<string, unknown>).subjectList
+          : undefined;
+      return Array.isArray(list) ? (list as Record<string, unknown>[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /** Fetch `/api/hot-movies-series` and merge movie + tv arrays. */
+  private async hotItems(): Promise<Record<string, unknown>[]> {
+    try {
+      const raw = await this.get('/api/hot-movies-series', new URLSearchParams());
+      const data = raw && typeof raw === 'object' ? (raw as Record<string, unknown>).data : undefined;
+      const movie = data && typeof data === 'object' ? (data as Record<string, unknown>).movie : undefined;
+      const tv = data && typeof data === 'object' ? (data as Record<string, unknown>).tv : undefined;
+      return [
+        ...(Array.isArray(movie) ? (movie as Record<string, unknown>[]) : []),
+        ...(Array.isArray(tv) ? (tv as Record<string, unknown>[]) : []),
+      ];
+    } catch {
+      return [];
+    }
   }
 
   async search(

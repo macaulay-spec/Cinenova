@@ -10,33 +10,35 @@
 :root {
   color-scheme: dark;
 
-  /* Colour system (oklch) */
-  --background: oklch(0.11 0.006 60); /* warm near-black */
-  --foreground: oklch(0.95 0.014 85); /* warm ivory */
-  --surface: oklch(0.15 0.008 60);
-  --surface-raised: oklch(0.19 0.01 60);
-  --primary: oklch(0.58 0.196 27); /* amber-red */
-  --primary-foreground: oklch(0.95 0.014 85);
-  --secondary: oklch(0.22 0.012 60);
-  --muted-foreground: oklch(0.68 0.014 75);
-  --border: oklch(0.26 0.01 60);
-  --gold: oklch(0.82 0.11 78);
-  --ember: oklch(0.68 0.17 45);
+  /* Colour system — CineNova v1.0 semantic tokens (no component hardcodes) */
+  --background: #0B0D12; /* primary canvas */
+  --foreground: #F7F2EA; /* primary text */
+  --surface: #151821; /* surface */
+  --surface-raised: #1C202B; /* elevated surface */
+  --primary: #E66D4D; /* brand accent (CineNova orange) */
+  --primary-foreground: #0B0D12;
+  --secondary: #B8B6B2; /* secondary text */
+  --muted-foreground: #838692; /* muted text */
+  --border: #2A2F3A;
+  --success: #42B883;
+  --warning: #F1B556;
+  --danger: #E85C5C;
+  --gold: #F1B556; /* reserved for star ratings */
 
   /* Composite cinematic tokens */
   --gradient-hero:
     linear-gradient(
       to top,
-      oklch(0.11 0.006 60 / 1) 0%,
-      oklch(0.11 0.006 60 / 0.82) 34%,
+      #0B0D12 0%,
+      rgba(11, 13, 18, 0.82) 34%,
       transparent 82%
     );
-  --gradient-poster: linear-gradient(to top, oklch(0.11 0.006 60 / 1) 0%, transparent 62%);
-  --shadow-cinematic: 0 24px 60px -20px oklch(0 0 0 / 0.8);
+  --gradient-poster: linear-gradient(to top, #0B0D12 0%, transparent 62%);
+  --shadow-cinematic: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
 
   /* Typography */
-  --font-display: 'Archivo', 'Archivo Fallback', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-body: 'DM Sans', 'DM Sans Fallback', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Inter', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 * {

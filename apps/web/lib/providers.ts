@@ -23,10 +23,9 @@ export function getCatalogProvider(): StreamingCatalogProvider {
       timeoutMs: env.GZMOVIE_REQUEST_TIMEOUT_MS,
     };
 
+    const apiKey = env.ZST_API_KEY ?? env.GZMOVIE_LEGACY_API_KEY;
     const gzMovie = new GZMovieProviderAdapter(
-      env.GZMOVIE_LEGACY_API_KEY
-        ? { ...gzMovieConfig, apiKey: env.GZMOVIE_LEGACY_API_KEY }
-        : gzMovieConfig,
+      apiKey ? { ...gzMovieConfig, apiKey } : gzMovieConfig,
     );
 
     // Serve real ZST LABS catalogue when reachable; fall back to the mock

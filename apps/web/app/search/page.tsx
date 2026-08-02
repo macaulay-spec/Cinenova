@@ -1,6 +1,7 @@
 import { AppShell, PosterCard } from '@cinenova/ui';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { getCatalogProvider } from '../../lib/providers';
+import { SearchAutocomplete } from '../../components/search-autocomplete';
 
 interface SearchPageProps {
   searchParams?: Promise<{
@@ -38,27 +39,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <p className="text-sm text-muted">Find your next story across movies and series.</p>
           </div>
 
-          {/* Search field */}
-          <div className="flex items-center gap-3 rounded-md border border-border bg-surface px-4 py-3">
-            <Search aria-hidden="true" className="h-5 w-5 text-muted" />
-            <form action="/search" className="flex-1">
-              <label htmlFor="q" className="sr-only">
-                Search titles
-              </label>
-              <input
-                id="q"
-                name="q"
-                defaultValue={query}
-                placeholder="Search titles, genres, cast, or mood"
-                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted"
-              />
-            </form>
-            {query ? (
-              <a href="/search" aria-label="Clear search" className="text-muted hover:text-foreground">
-                <X aria-hidden="true" className="h-5 w-5" />
-              </a>
-            ) : null}
-          </div>
+          {/* Debounced search with live suggestions (BFF proxy) */}
+          <SearchAutocomplete initialQuery={query} />
 
           {/* Filter strip */}
           <div className="scrollbar-none flex items-center gap-3 overflow-x-auto" role="group" aria-label="Filter results">
