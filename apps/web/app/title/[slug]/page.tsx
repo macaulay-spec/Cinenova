@@ -12,13 +12,44 @@ interface TitlePageProps {
 export default async function TitlePage({ params }: TitlePageProps) {
   const { slug } = await params;
   const provider = getCatalogProvider();
-  const title = await provider.titleBySlug(slug, 'NG');
+
+  let title: Awaited<ReturnType<typeof provider.titleBySlug>>;
+  let providerError = false;
+  try {
+    title = await provider.titleBySlug(slug, 'NG');
+  } catch {
+    providerError = true;
+    title = null;
+  }
+
+  if (providerError) {
+    return (
+      <AppShell active="home">
+        <section className="grid min-h-screen place-items-center px-4 py-28">
+          <div className="max-w-xl rounded-[2rem] border border-amber/30 bg-amber/10 p-10 text-center">
+            <h1 className="text-3xl font-black text-white">This title is unavailable right now</h1>
+            <p className="mt-3 text-cinenova-muted">
+              The catalogue did not respond. Please try again shortly.
+            </p>
+            <AnchorButton href="/" variant="secondary" className="mt-6">
+              Back to home
+            </AnchorButton>
+          </div>
+        </section>
+      </AppShell>
+    );
+  }
 
   if (!title) {
     notFound();
   }
 
-  const recommendations = await provider.recommendations(title.id, 'NG');
+  let recommendations: Awaited<ReturnType<typeof provider.recommendations>> = [];
+  try {
+    recommendations = await provider.recommendations(title.id, 'NG');
+  } catch {
+    recommendations = [];
+  }
   const hero = title.artwork.find((artwork) => artwork.kind === 'hero') ?? title.artwork[0];
 
   return (

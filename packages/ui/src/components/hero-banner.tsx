@@ -24,7 +24,7 @@ export function HeroBanner({ title }: HeroBannerProps) {
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(5,7,11,0.15),#05070b_92%)]" />
       <div className="max-w-3xl space-y-7">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge>Mock licensed catalogue</Badge>
+          <Badge>CineNova</Badge>
           <Badge className="border-emerald-400/30 text-emerald-200">
             <ShieldCheck aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> Rights-gated
           </Badge>

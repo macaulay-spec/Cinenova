@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return validationProblem(parsed.error.message);
   }
 
-  const result = await getCatalogProvider().search(parsed.data.q, parsed.data.region);
+  const result = await getCatalogProvider().search(parsed.data.q, parsed.data.region, parsed.data.kind);
   return NextResponse.json(result, {
     headers: {
       'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',

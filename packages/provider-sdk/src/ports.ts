@@ -29,7 +29,7 @@ export interface StreamingCatalogProvider {
   readonly name: string;
   healthCheck(): Promise<ProviderHealthResult>;
   homepage(region: string): Promise<HomeResponse>;
-  search(query: string, region: string): Promise<SearchResponse>;
+  search(query: string, region: string, kind?: 'movie' | 'series' | 'episode' | 'trailer'): Promise<SearchResponse>;
   titleBySlug(slug: string, region: string): Promise<TitleDetail | null>;
   titleById(id: string, region: string): Promise<TitleDetail | null>;
   recommendations(titleId: string, region: string): Promise<TitleDetail[]>;

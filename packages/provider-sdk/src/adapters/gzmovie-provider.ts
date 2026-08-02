@@ -98,19 +98,30 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
     });
   }
 
-  async search(query: string, _region: string): Promise<SearchResponse> {
+  async search(
+    query: string,
+    _region: string,
+    kind?: 'movie' | 'series' | 'episode' | 'trailer',
+  ): Promise<SearchResponse> {
     const params = new URLSearchParams();
     if (query.trim()) {
       params.set('query', query.trim());
     }
     params.set('page', '1');
     params.set('perPage', '24');
+    if (kind) {
+      params.set('subjectType', kind === 'series' ? 'series' : kind);
+    }
 
     const raw = await this.get('/api/search', params);
     const normalized = toSearchResponse(query, raw);
+    const results =
+      kind === 'movie' || kind === 'series'
+        ? normalized.results.filter((item) => item.kind === kind)
+        : normalized.results;
     return searchResponseSchema.parse({
       query,
-      results: normalized.results,
+      results,
       suggestions: normalized.suggestions,
     });
   }

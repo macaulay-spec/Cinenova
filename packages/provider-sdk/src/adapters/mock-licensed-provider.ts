@@ -41,11 +41,16 @@ export class MockLicensedProviderAdapter implements StreamingCatalogProvider {
     return homeResponseSchema.parse({ ...MOCK_HOME, generatedAt: new Date().toISOString() });
   }
 
-  async search(query: string, region: string): Promise<SearchResponse> {
+  async search(
+    query: string,
+    region: string,
+    kind?: 'movie' | 'series' | 'episode' | 'trailer',
+  ): Promise<SearchResponse> {
     const normalizedRegion = region.toUpperCase();
     const results = MOCK_TITLES.filter((title) =>
       title.countries.includes(normalizedRegion) || title.id === 'title-orbit-silence',
     )
+      .filter((title) => (kind ? title.kind === kind : true))
       .filter((title) => includesQuery(title, query))
       .map(toTitleSummary);
 

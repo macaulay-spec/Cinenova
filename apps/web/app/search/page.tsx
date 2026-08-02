@@ -5,17 +5,26 @@ import { getCatalogProvider } from '../../lib/providers';
 interface SearchPageProps {
   searchParams?: Promise<{
     q?: string;
+    kind?: 'movie' | 'series' | 'episode' | 'trailer';
   }>;
 }
+
+const KIND_FILTERS: { id: '' | 'movie' | 'series'; label: string }[] = [
+  { id: '', label: 'All' },
+  { id: 'movie', label: 'Movies' },
+  { id: 'series', label: 'Series' },
+];
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const query = resolvedSearchParams.q ?? '';
-  let search: Awaited<ReturnType<ReturnType<typeof getCatalogProvider>['search']>> | null = null;
+  const kind = resolvedSearchParams.kind ?? '';
+  const provider = getCatalogProvider();
+  let search: Awaited<ReturnType<typeof provider.search>> | null = null;
   let providerError = false;
 
   try {
-    search = await getCatalogProvider().search(query, 'NG');
+    search = await provider.search(query, 'NG', kind || undefined);
   } catch {
     providerError = true;
   }
@@ -41,6 +50,28 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               className="min-h-14 w-full rounded-full border border-white/10 bg-white/8 pl-14 pr-5 text-base text-white outline-none transition placeholder:text-cinenova-muted focus:border-cinenova-accent focus:ring-2 focus:ring-cinenova-accent/40"
             />
           </form>
+
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter results by type">
+            {KIND_FILTERS.map((filter) => {
+              const active = kind === filter.id;
+              const href = `/search?${query ? `q=${encodeURIComponent(query)}&` : ''}${filter.id ? `kind=${filter.id}` : ''}`;
+              return (
+                <a
+                  key={filter.id || 'all'}
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={
+                    active
+                      ? 'rounded-full border border-cinenova-accent bg-cinenova-accent/20 px-4 py-2 text-sm font-bold text-white'
+                      : 'rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-bold text-cinenova-muted hover:bg-white/12 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cinenova-accent'
+                  }
+                >
+                  {filter.label}
+                </a>
+              );
+            })}
+          </div>
+
           {query && search ? (
             <p className="text-sm text-cinenova-muted">
               {search.results.length} result{search.results.length === 1 ? '' : 's'} for “{query}”
