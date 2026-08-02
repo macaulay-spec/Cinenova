@@ -9,6 +9,7 @@ import type {
 } from '../ports';
 import {
   enrichTitleDetail,
+  extractBanners,
   extractItems,
   extractStars,
   extractSubject,
@@ -93,18 +94,25 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
 
   async homepage(_region: string): Promise<HomeResponse> {
     const raw = await this.get('/api/homepage', new URLSearchParams());
-    // If trending/newReleases come back empty, fall back to a general search so
-    // the home rails are populated with real, poster-bearing titles.
-    let fallbackItems = extractItems(raw);
-    if (fallbackItems.length === 0) {
+    // The real homepage nests content in operatingList[].banner.items[] (not a
+    // top-level items array). Only fire a search fallback when there are NO
+    // banners, and never with an empty query (which the API rejects with 400).
+    const banners = extractBanners(raw);
+    let fallbackItems = [] as Record<string, unknown>[];
+    if (banners.length === 0) {
       try {
-        const searchRaw = await this.get('/api/search', new URLSearchParams({ query: '', perPage: '40', page: '1' }));
+        const searchRaw = await this.get(
+          '/api/search',
+          new URLSearchParams({ query: 'a', perPage: '40', page: '1' }),
+        );
         fallbackItems = extractItems(searchRaw);
       } catch {
         fallbackItems = [];
       }
     }
 
+    const bannerItems = banners.map((b) => b);
+    this.indexItems(bannerItems as Record<string, unknown>[]);
     this.indexItems(fallbackItems);
     const normalized = toHomeResponse(raw, fallbackItems);
     return homeResponseSchema.parse({
@@ -120,7 +128,10 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
     kind?: 'movie' | 'series' | 'episode' | 'trailer',
   ): Promise<SearchResponse> {
     const params = new URLSearchParams();
-    params.set('query', query.trim());
+    // The ZST LABS search API rejects an empty query with 400. For an empty
+    // search, fall back to a broad default term so the endpoint never fails.
+    const effectiveQuery = query.trim() || 'movie';
+    params.set('query', effectiveQuery);
     params.set('page', '1');
     params.set('perPage', '24');
     params.set('subjectType', kind === 'series' ? '2' : kind === 'movie' ? '1' : 'ALL');

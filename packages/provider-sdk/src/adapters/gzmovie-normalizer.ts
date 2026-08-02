@@ -419,11 +419,14 @@ export function toHomeResponse(raw: unknown, fallbackItems: GzItem[] = []): Omit
     ...bannerDetails,
     ...[...homeList, ...topPickList, ...fallbackItems].map(toTitleDetail),
   ]
+    // Drop entries that cannot satisfy the contract (missing id/slug) so the
+    // schema parse can never fail on partial provider data.
+    .filter((item) => item.id.length > 0 && item.slug.length > 0)
     .slice(0, 40);
 
   // Hero: first banner that has a poster, else first rail item.
   const hero =
-    bannerDetails.find((item) => item.artwork.length > 0) ??
+    bannerDetails.find((item) => item.artwork.length > 0 && item.slug.length > 0) ??
     railItems.find((item) => item.artwork.length > 0) ??
     bannerDetails[0] ??
     railItems[0] ??

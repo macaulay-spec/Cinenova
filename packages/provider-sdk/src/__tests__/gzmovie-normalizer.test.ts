@@ -7,6 +7,7 @@ import {
   toSearchResponse,
   toTitleDetail,
 } from '../adapters/gzmovie-normalizer';
+import { homeResponseSchema } from '@cinenova/contracts';
 
 // Fixtures based on real ZST LABS responses.
 const searchResponse = {
@@ -171,6 +172,14 @@ describe('gzmovie normalizer', () => {
         expect(item.slug.length).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('parses a real operatingList homepage into a valid HomeResponse', () => {
+    const home = toHomeResponse(homepageResponse, []);
+    // Must satisfy the full Zod contract (would have thrown with empty slugs).
+    const parsed = homeResponseSchema.parse({ ...home, generatedAt: new Date().toISOString() });
+    expect(parsed.hero.title).toBe('The Avengers');
+    expect(parsed.rails[0]?.items.length).toBeGreaterThan(0);
   });
 
   it('extracts a subject from item-details', () => {
