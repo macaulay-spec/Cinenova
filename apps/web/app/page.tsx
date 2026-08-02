@@ -1,4 +1,4 @@
-import { AppShell, ContentRail, HeroBanner } from '@cinenova/ui';
+import { AppShell, ContentRail, Hero } from '@cinenova/ui';
 import { getCatalogProvider } from '../lib/providers';
 
 export const dynamic = 'force-dynamic';
@@ -16,12 +16,13 @@ export default async function HomePage() {
   if (providerError || !home) {
     return (
       <AppShell active="home">
-        <section className="grid min-h-screen place-items-center px-4 py-28">
-          <div className="max-w-xl rounded-[2rem] border border-amber/30 bg-amber/10 p-10 text-center">
-            <h1 className="text-3xl font-black text-white">The catalogue is warming up</h1>
-            <p className="mt-3 text-cinenova-muted">
-              We could not reach the catalogue right now. Please refresh shortly. No internal details
-              or provider keys are exposed.
+        <section className="flex min-h-screen items-center justify-center px-4 pt-20">
+          <div className="max-w-xl rounded-md border border-border bg-surface p-10 text-center">
+            <p className="eyebrow">Catalogue</p>
+            <h1 className="mt-3 font-display text-2xl text-foreground">Warming up</h1>
+            <p className="mt-3 text-sm text-muted">
+              The catalogue could not be reached. Please refresh shortly. No provider keys or internal
+              details are exposed.
             </p>
           </div>
         </section>
@@ -29,14 +30,35 @@ export default async function HomePage() {
     );
   }
 
+  const featured = home.hero;
+  const firstRail = home.rails[0]?.items ?? [];
+
   return (
-    <AppShell active="home">
-      <HeroBanner title={home.hero} />
-      <div className="space-y-12 pb-28 pt-10">
+    <AppShell active="home" overlay>
+      <Hero title={featured} />
+      <div className="pb-20 pt-6">
+        {/* Continue Watching — 16:9 stills, rail 1 */}
+        <ContentRail
+          id="continue"
+          title="Continue Watching"
+          items={firstRail.slice(0, 6)}
+          variant="stills"
+          progress={38}
+        />
+        {/* Curated 2:3 poster rails */}
         {home.rails.map((rail) => (
-          <ContentRail key={rail.id} rail={rail} />
+          <ContentRail
+            key={rail.id}
+            id={rail.id}
+            title={rail.title}
+            {...(rail.subtitle ? { subtitle: rail.subtitle } : {})}
+            items={rail.items}
+          />
         ))}
       </div>
+      <footer className="border-t border-border px-4 py-8 text-center text-xs text-muted sm:px-6 lg:px-8">
+        All titles are licensed. Playback, downloads, and territories are governed by rights windows.
+      </footer>
     </AppShell>
   );
 }

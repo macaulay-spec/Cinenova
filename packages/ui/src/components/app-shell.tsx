@@ -1,87 +1,157 @@
 import type { ReactNode } from 'react';
-import { Bell, Download, Home, Search, Shield, User } from 'lucide-react';
+import { Download, Home, List, Search, User } from 'lucide-react';
 import { cn } from '../cn';
+import { Wordmark } from './wordmark';
+
+export type NavKey = 'home' | 'search' | 'my-list' | 'downloads' | 'profile';
 
 interface AppShellProps {
   children: ReactNode;
-  active?: 'home' | 'search' | 'downloads' | 'account' | 'admin';
+  active?: NavKey | (string & {});
+  /** Transparent header (over key art) for Home / Title detail. */
+  overlay?: boolean;
 }
 
-const navItems = [
+const navItems: { key: NavKey; label: string; href: string; icon: typeof Home }[] = [
   { key: 'home', label: 'Home', href: '/', icon: Home },
   { key: 'search', label: 'Search', href: '/search', icon: Search },
+  { key: 'my-list', label: 'My List', href: '/my-list', icon: List },
   { key: 'downloads', label: 'Downloads', href: '/downloads', icon: Download },
-  { key: 'account', label: 'Account', href: '/account', icon: User },
-  { key: 'admin', label: 'Admin', href: '/admin', icon: Shield },
-] as const;
+  { key: 'profile', label: 'Profile', href: '/profiles', icon: User },
+];
 
-export function AppShell({ children, active = 'home' }: AppShellProps) {
+export function AppShell({ children, active = 'home', overlay = false }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-cinenova-void text-cinenova-ivory">
+    <div className="min-h-screen bg-background text-foreground">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-cinenova-accent focus:px-4 focus:py-2 focus:text-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
       >
         Skip to main content
       </a>
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-cinenova-void/82 backdrop-blur-xl">
-        <nav className="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-10" aria-label="Primary navigation">
-          <a href="/" className="flex items-center gap-3 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-cinenova-accent">
-            <span className="grid h-9 w-9 place-items-center rounded-2xl bg-cinenova-accent font-black text-white shadow-glow">
-              C
-            </span>
-            <span className="text-lg font-black tracking-tight text-white">CineNova</span>
+
+      {/* Desktop / tablet top bar (64px) */}
+      <header
+        className={cn(
+          'fixed inset-x-0 top-0 z-40 hidden min-h-16 items-center md:flex',
+          overlay
+            ? 'bg-gradient-to-b from-background/95 via-background/60 to-transparent'
+            : 'border-b border-border bg-background/90 backdrop-blur-md',
+        )}
+      >
+        <div className="flex w-full items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
+          <a
+            href="/"
+            className="rounded-sm text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <Wordmark />
           </a>
-          <div className="hidden items-center gap-1 md:flex">
-            {navItems.map((item) => (
-              <a
-                key={item.key}
-                href={item.href}
-                className={cn(
-                  'rounded-full px-4 py-2 text-sm font-bold text-cinenova-muted transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cinenova-accent',
-                  active === item.key && 'bg-white/10 text-white',
-                )}
-                aria-current={active === item.key ? 'page' : undefined}
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="grid h-11 w-11 place-items-center rounded-full bg-white/8 text-cinenova-muted transition hover:bg-white/14 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cinenova-accent"
-              aria-label="Open notifications"
+          <nav className="flex items-center gap-6" aria-label="Primary navigation">
+            {navItems.map((item) => {
+              const isActive = active === item.key;
+              return (
+                <a
+                  key={item.key}
+                  href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={cn(
+                    'rounded-sm text-sm font-bold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
+                    isActive ? 'text-foreground' : 'text-muted hover:text-foreground',
+                  )}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
+          </nav>
+          <div className="flex items-center gap-4">
+            <a
+              href="/search"
+              aria-label="Search"
+              className="grid h-10 w-10 place-items-center rounded-full text-muted transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
             >
-              <Bell aria-hidden="true" className="h-5 w-5" />
-            </button>
+              <Search aria-hidden="true" className="h-5 w-5" />
+            </a>
             <a
               href="/profiles"
-              className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-cinenova-accent to-[#642116] text-sm font-black text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cinenova-accent"
               aria-label="Switch profile"
+              className="grid h-9 w-9 place-items-center rounded-full bg-secondary font-display text-sm ring-1 ring-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
             >
               A
             </a>
           </div>
-        </nav>
+        </div>
       </header>
+
+      {/* Mobile top wordmark */}
+      <header
+        className={cn(
+          'fixed inset-x-0 top-0 z-40 flex min-h-14 items-center px-4 md:hidden',
+          overlay ? 'bg-gradient-to-b from-background/95 to-transparent' : 'bg-background/90 backdrop-blur-md',
+        )}
+      >
+        <a
+          href="/"
+          className="rounded-sm text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          <Wordmark />
+        </a>
+      </header>
+
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>
-      <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 rounded-[1.75rem] border border-white/10 bg-cinenova-panel/95 p-2 shadow-card backdrop-blur md:hidden" aria-label="Mobile navigation">
-        {navItems.slice(0, 4).map((item) => {
+
+      {/* Mobile bottom tab bar — five items */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 flex min-h-16 items-stretch justify-around border-t border-border bg-background/90 backdrop-blur-md md:hidden"
+        aria-label="Mobile navigation"
+      >
+        {navItems.map((item) => {
           const Icon = item.icon;
+          const isActive = active === item.key;
           return (
             <a
               key={item.key}
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[0.68rem] font-bold text-cinenova-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-cinenova-accent',
-                active === item.key && 'bg-cinenova-accent text-white',
+                'flex min-w-14 flex-col items-center justify-center gap-1 pb-2 pt-3 text-[0.625rem] font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
+                isActive ? 'text-primary' : 'text-muted hover:text-foreground',
               )}
-              aria-current={active === item.key ? 'page' : undefined}
             >
-              {Icon ? <Icon aria-hidden="true" className="h-4 w-4" /> : <span className="h-4 w-4" aria-hidden="true" />}
+              <Icon aria-hidden="true" className="h-5 w-5" />
+              {item.label}
+            </a>
+          );
+        })}
+      </nav>
+
+      {/* TV / 10-foot left rail */}
+      <nav
+        className="fixed left-0 top-0 z-40 hidden min-h-screen w-40 flex-col gap-2 border-r border-border bg-background/95 px-3 py-6 [@media(min-width:1600px)_and_(pointer:coarse)]:flex"
+        aria-label="TV navigation"
+      >
+        <div className="mb-6 px-2">
+          <Wordmark />
+        </div>
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = active === item.key;
+          return (
+            <a
+              key={item.key}
+              href={item.href}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'relative flex items-center gap-3 rounded-md px-3 py-3 text-base font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
+                isActive ? 'text-foreground' : 'text-muted hover:text-foreground',
+              )}
+            >
+              {isActive ? (
+                <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 bg-primary" aria-hidden="true" />
+              ) : null}
+              <Icon aria-hidden="true" className="h-5 w-5" />
               {item.label}
             </a>
           );

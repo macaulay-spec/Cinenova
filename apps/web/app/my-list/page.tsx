@@ -1,12 +1,11 @@
-import { AppShell, Badge, ContentRail, PosterCard } from '@cinenova/ui';
-import { BookmarkPlus } from 'lucide-react';
+import { AppShell, ContentRail } from '@cinenova/ui';
+import { Trash2 } from 'lucide-react';
 import { getCatalogProvider } from '../../lib/providers';
 
 export const dynamic = 'force-dynamic';
 
 export default async function MyListPage() {
   const provider = getCatalogProvider();
-
   let home: Awaited<ReturnType<typeof provider.homepage>> | null = null;
   let providerError = false;
   try {
@@ -15,59 +14,57 @@ export default async function MyListPage() {
     providerError = true;
   }
 
-  const library = home?.rails[0]?.items ?? [];
-  const recommendations = home?.rails[1]?.items ?? [];
+  const library = home?.rails[0]?.items?.slice(0, 6) ?? [];
+  const continueWatching = home?.rails[1]?.items?.slice(0, 6) ?? [];
 
   return (
-    <AppShell active="home">
-      <section className="px-4 pb-28 pt-28 sm:px-6 lg:px-10">
-        <div className="mx-auto max-w-7xl space-y-10">
-          <div className="space-y-4">
-            <Badge>Library</Badge>
-            <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">My List</h1>
-            <p className="max-w-3xl text-cinenova-muted">
-              Your saved titles, populated from the live catalogue. Save/persistence is wired per
-              profile once identity persistence is enabled.
-            </p>
-          </div>
+    <AppShell active="my-list">
+      <section className="px-4 pb-24 pt-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl space-y-8">
+          <h1 className="font-display text-3xl text-foreground sm:text-4xl">My List</h1>
 
-          {providerError || !home ? (
-            <div className="rounded-[2rem] border border-amber/30 bg-amber/10 p-10 text-center">
-              <h2 className="text-2xl font-black text-white">Your list is warming up</h2>
-              <p className="mt-2 text-cinenova-muted">
-                The catalogue did not respond. Please refresh shortly.
-              </p>
+          {providerError || library.length === 0 ? (
+            <div className="rounded-md border border-border bg-surface p-10 text-center">
+              <p className="font-display text-xl text-foreground">Nothing saved yet</p>
+              <p className="mt-2 text-sm text-muted">Browse the catalogue and build your list.</p>
+              <a href="/" className="mt-5 inline-block rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:opacity-80">
+                Browse titles
+              </a>
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-3 text-cinenova-muted">
-                <BookmarkPlus aria-hidden="true" className="h-5 w-5 text-cinenova-accent" />
-                <p className="text-sm">
-                  {library.length} title{library.length === 1 ? '' : 's'} in your list
-                </p>
+              <div className="divide-y divide-border rounded-md border border-border bg-surface">
+                {library.map((title) => (
+                  <div key={title.id} className="flex items-center gap-4 p-3">
+                    <div className="h-16 w-11 shrink-0 overflow-hidden rounded-sm bg-secondary">
+                      {title.artwork[0]?.url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={title.artwork[0].url} alt={`${title.title} poster artwork`} className="h-full w-full object-cover" loading="lazy" />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <a href={`/title/${title.slug}`} className="truncate text-sm font-bold text-foreground hover:text-primary">
+                        {title.title}
+                      </a>
+                      <p className="text-xs text-muted">
+                        {title.runtimeSeconds ? `${Math.round(title.runtimeSeconds / 60)} min` : '—'} · {title.releaseYear}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${title.title} from My List`}
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted transition hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                    >
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
 
-              {library.length > 0 ? (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                  {library.map((title) => (
-                    <PosterCard key={title.id} title={title} href={`/title/${title.slug}`} className="min-w-0" />
-                  ))}
+              {continueWatching.length > 0 ? (
+                <div className="pt-4">
+                  <ContentRail id="cw" title="Continue Watching" items={continueWatching} variant="stills" progress={50} />
                 </div>
-              ) : (
-                <div className="rounded-[2rem] border border-white/10 bg-white/6 p-10 text-center text-cinenova-muted">
-                  Nothing saved yet. Browse the catalogue to build your list.
-                </div>
-              )}
-
-              {recommendations.length > 0 ? (
-                <ContentRail
-                  rail={{
-                    id: 'picks',
-                    title: 'Because you watch on CineNova',
-                    subtitle: 'Picks from the live catalogue',
-                    items: recommendations,
-                  }}
-                />
               ) : null}
             </>
           )}

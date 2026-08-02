@@ -4,40 +4,43 @@ import { cn } from '../cn';
 interface PosterCardProps {
   title: TitleSummary;
   href: string;
-  priority?: boolean;
   className?: string;
 }
 
+/**
+ * 2:3 poster card. Signature motion: scale(1.04) over 500ms on hover.
+ * Focus is an amber ring. Caption: year · kind.
+ */
 export function PosterCard({ title, href, className }: PosterCardProps) {
   const poster = title.artwork.find((artwork) => artwork.kind === 'poster') ?? title.artwork[0];
 
   return (
     <a
       href={href}
-      className={cn(
-        'group block min-w-[10.5rem] max-w-[12rem] rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-cinenova-accent focus-visible:ring-offset-4 focus-visible:ring-offset-cinenova-void sm:min-w-[12rem]',
-        className,
-      )}
-      aria-label={`Open details for ${title.title}`}
+      aria-label={`Open ${title.title} poster artwork`}
+      className={cn('group block min-w-0 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary', className)}
     >
-      <div
-        className="relative aspect-[2/3] overflow-hidden rounded-3xl border border-white/10 bg-cinenova-panel shadow-card transition duration-200 group-hover:-translate-y-1 group-hover:border-cinenova-accent/60"
-        style={{
-          background: `linear-gradient(145deg, ${poster?.dominantColor ?? '#e46b4a'}, #11141b 58%, #05070b)`,
-        }}
-      >
-        <div className="absolute inset-x-0 top-0 h-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.28),transparent_55%)]" />
-        <div className="absolute inset-x-4 bottom-4 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">
-            {title.kind}
-          </p>
-          <h3 className="line-clamp-3 text-lg font-black leading-tight text-white">{title.title}</h3>
-        </div>
+      <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-surface ring-1 ring-inset ring-border">
+        {poster?.url ? (
+          <img
+            src={poster.url}
+            alt={`${title.title} poster artwork`}
+            loading="lazy"
+            width={poster.width}
+            height={poster.height}
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-end p-3">
+            <span className="font-display text-sm uppercase leading-tight text-foreground">{title.title}</span>
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-poster" />
       </div>
-      <div className="mt-3 space-y-1">
-        <p className="line-clamp-1 text-sm font-bold text-cinenova-ivory">{title.title}</p>
-        <p className="text-xs text-cinenova-muted">
-          {title.releaseYear} · {title.maturityRating.replace('_', '-')} · {title.minimumPlan}
+      <div className="mt-2 px-0.5">
+        <p className="truncate text-sm font-bold text-foreground">{title.title}</p>
+        <p className="mt-0.5 text-[0.6875rem] text-muted">
+          {title.releaseYear} · {title.kind === 'series' ? 'Series' : 'Movie'}
         </p>
       </div>
     </a>

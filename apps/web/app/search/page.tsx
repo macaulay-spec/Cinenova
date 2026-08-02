@@ -1,11 +1,11 @@
-import { AppShell, Badge, PosterCard } from '@cinenova/ui';
-import { Search } from 'lucide-react';
+import { AppShell, PosterCard } from '@cinenova/ui';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { getCatalogProvider } from '../../lib/providers';
 
 interface SearchPageProps {
   searchParams?: Promise<{
     q?: string;
-    kind?: 'movie' | 'series' | 'episode' | 'trailer';
+    kind?: 'movie' | 'series';
   }>;
 }
 
@@ -16,9 +16,9 @@ const KIND_FILTERS: { id: '' | 'movie' | 'series'; label: string }[] = [
 ];
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const resolvedSearchParams = searchParams ? await searchParams : {};
-  const query = resolvedSearchParams.q ?? '';
-  const kind = resolvedSearchParams.kind ?? '';
+  const resolved = searchParams ? await searchParams : {};
+  const query = resolved.q ?? '';
+  const kind = resolved.kind ?? '';
   const provider = getCatalogProvider();
   let search: Awaited<ReturnType<typeof provider.search>> | null = null;
   let providerError = false;
@@ -31,27 +31,38 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <AppShell active="search">
-      <section className="px-4 pb-28 pt-28 sm:px-6 lg:px-10">
-        <div className="mx-auto max-w-6xl space-y-10">
-          <div className="space-y-4">
-            <Badge>Discovery</Badge>
-            <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">Search CineNova</h1>
-            <p className="max-w-2xl text-cinenova-muted">
-              Search runs against the live provider catalogue. Results are rights-filtered and
-              cached briefly at the edge.
-            </p>
+      <section className="px-4 pb-24 pt-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <div className="space-y-3">
+            <h1 className="font-display text-3xl text-foreground sm:text-4xl">Search</h1>
+            <p className="text-sm text-muted">Find your next story across movies and series.</p>
           </div>
-          <form action="/search" className="relative max-w-3xl">
-            <Search aria-hidden="true" className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-cinenova-muted" />
-            <input
-              name="q"
-              defaultValue={query}
-              placeholder="Search titles, genres, cast, or mood"
-              className="min-h-14 w-full rounded-full border border-white/10 bg-white/8 pl-14 pr-5 text-base text-white outline-none transition placeholder:text-cinenova-muted focus:border-cinenova-accent focus:ring-2 focus:ring-cinenova-accent/40"
-            />
-          </form>
 
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter results by type">
+          {/* Search field */}
+          <div className="flex items-center gap-3 rounded-md border border-border bg-surface px-4 py-3">
+            <Search aria-hidden="true" className="h-5 w-5 text-muted" />
+            <form action="/search" className="flex-1">
+              <label htmlFor="q" className="sr-only">
+                Search titles
+              </label>
+              <input
+                id="q"
+                name="q"
+                defaultValue={query}
+                placeholder="Search titles, genres, cast, or mood"
+                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted"
+              />
+            </form>
+            {query ? (
+              <a href="/search" aria-label="Clear search" className="text-muted hover:text-foreground">
+                <X aria-hidden="true" className="h-5 w-5" />
+              </a>
+            ) : null}
+          </div>
+
+          {/* Filter strip */}
+          <div className="scrollbar-none flex items-center gap-3 overflow-x-auto" role="group" aria-label="Filter results">
+            <SlidersHorizontal aria-hidden="true" className="h-5 w-5 shrink-0 text-muted" />
             {KIND_FILTERS.map((filter) => {
               const active = kind === filter.id;
               const href = `/search?${query ? `q=${encodeURIComponent(query)}&` : ''}${filter.id ? `kind=${filter.id}` : ''}`;
@@ -59,56 +70,45 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 <a
                   key={filter.id || 'all'}
                   href={href}
-                  aria-current={active ? 'page' : undefined}
+                  aria-pressed={active}
                   className={
                     active
-                      ? 'rounded-full border border-cinenova-accent bg-cinenova-accent/20 px-4 py-2 text-sm font-bold text-white'
-                      : 'rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-bold text-cinenova-muted hover:bg-white/12 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cinenova-accent'
+                      ? 'rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground'
+                      : 'rounded-full bg-secondary px-4 py-1.5 text-xs font-bold text-muted hover:text-foreground'
                   }
                 >
                   {filter.label}
                 </a>
               );
             })}
+            <span className="h-5 w-px shrink-0 bg-border" aria-hidden="true" />
           </div>
 
-          {query && search ? (
-            <p className="text-sm text-cinenova-muted">
-              {search.results.length} result{search.results.length === 1 ? '' : 's'} for “{query}”
+          {/* Result line */}
+          {search && !providerError ? (
+            <p className="text-xs text-muted">
+              {query ? `Results for "${query}" · ${search.results.length} title${search.results.length === 1 ? '' : 's'}` : `Top results · ${search.results.length}`}
             </p>
           ) : null}
-          {search && search.suggestions.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {search.suggestions.map((suggestion) => (
-                <a
-                  key={suggestion}
-                  href={`/search?q=${encodeURIComponent(suggestion)}`}
-                  className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-bold text-cinenova-muted hover:bg-white/12 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cinenova-accent"
-                >
-                  {suggestion}
-                </a>
-              ))}
-            </div>
-          ) : null}
+
+          {/* Results */}
           {providerError ? (
-            <div className="rounded-[2rem] border border-amber/30 bg-amber/10 p-8 text-center">
-              <h2 className="text-2xl font-black text-white">Search is temporarily unavailable</h2>
-              <p className="mt-2 text-cinenova-muted">
-                The catalogue service did not respond. Please try again shortly. No provider keys or
-                internal details are exposed.
-              </p>
+            <div className="rounded-md border border-border bg-surface p-8 text-center">
+              <h2 className="font-display text-xl text-foreground">Search is unavailable</h2>
+              <p className="mt-2 text-sm text-muted">The catalogue did not respond. Try again shortly.</p>
             </div>
           ) : search && search.results.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
               {search.results.map((title) => (
-                <PosterCard key={title.id} title={title} href={`/title/${title.slug}`} className="min-w-0" />
+                <PosterCard key={title.id} title={title} href={`/title/${title.slug}`} />
               ))}
             </div>
           ) : (
-            <div className="rounded-[2rem] border border-white/10 bg-white/6 p-8 text-center">
-              <h2 className="text-2xl font-black text-white">No results yet</h2>
-              <p className="mt-2 text-cinenova-muted">
-                Try another title, genre, or mood. Results come from the live provider catalogue.
+            <div className="rounded-md border border-border bg-surface p-10 text-center">
+              <h2 className="font-display text-xl text-foreground">No titles match that search</h2>
+              <p className="mt-2 text-sm text-muted">
+                Try different spelling, browse by genre, or note that some titles may not be available
+                in your territory.
               </p>
             </div>
           )}

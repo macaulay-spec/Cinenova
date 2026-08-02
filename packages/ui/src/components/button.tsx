@@ -1,15 +1,20 @@
 import type { ButtonHTMLAttributes, AnchorHTMLAttributes, ReactNode } from 'react';
 import { cn } from '../cn';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
+
+const base =
+  'inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm font-bold transition-[color,opacity,background-color] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50';
 
 const variantClass: Record<ButtonVariant, string> = {
-  primary:
-    'bg-cinenova-accent text-white shadow-glow hover:bg-cinenova-accent-strong focus-visible:outline-cinenova-accent',
-  secondary:
-    'bg-white/10 text-cinenova-ivory ring-1 ring-white/15 hover:bg-white/15 focus-visible:outline-cinenova-accent',
-  ghost: 'bg-transparent text-cinenova-ivory hover:bg-white/10 focus-visible:outline-cinenova-accent',
-  danger: 'bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-300',
+  // Solid amber-red primary action
+  primary: 'bg-primary text-primary-foreground hover:opacity-80',
+  // Translucent bordered (hero secondary action)
+  secondary: 'bg-white/5 text-foreground ring-1 ring-inset ring-border hover:bg-white/10',
+  // Ghost bordered (tertiary action)
+  ghost: 'bg-transparent text-foreground ring-1 ring-inset ring-border hover:bg-white/5',
+  // Inert track / soft button
+  outline: 'bg-secondary text-foreground hover:opacity-80',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -18,15 +23,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export function Button({ className, variant = 'primary', type = 'button', ...props }: ButtonProps) {
   return (
-    <button
-      type={type}
-      className={cn(
-        'inline-flex min-h-11 items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-        variantClass[variant],
-        className,
-      )}
-      {...props}
-    />
+    <button type={type} className={cn(base, variantClass[variant], className)} {...props} />
   );
 }
 
@@ -37,13 +34,6 @@ export interface AnchorButtonProps extends AnchorHTMLAttributes<HTMLAnchorElemen
 
 export function AnchorButton({ className, variant = 'primary', ...props }: AnchorButtonProps) {
   return (
-    <a
-      className={cn(
-        'inline-flex min-h-11 items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
-        variantClass[variant],
-        className,
-      )}
-      {...props}
-    />
+    <a className={cn(base, variantClass[variant], className)} {...props} />
   );
 }

@@ -1,29 +1,51 @@
-import type { CatalogueRail } from '@cinenova/contracts';
+import { ChevronRight } from 'lucide-react';
+import type { TitleSummary } from '@cinenova/contracts';
 import { PosterCard } from './poster-card';
+import { StillsCard } from './stills-card';
 
 interface ContentRailProps {
-  rail: CatalogueRail;
+  id: string;
+  title: string;
+  subtitle?: string;
+  items: TitleSummary[];
+  /** Render as 16:9 continue-watching stills (rail 1). */
+  variant?: 'poster' | 'stills';
+  progress?: number;
 }
 
-export function ContentRail({ rail }: ContentRailProps) {
-  if (rail.items.length === 0) {
-    return null;
-  }
-
+/** Horizontal scrolling rail with hidden scrollbars and a chevron affordance. */
+export function ContentRail({ id, title, subtitle, items, variant = 'poster', progress = 0 }: ContentRailProps) {
   return (
-    <section className="space-y-4" aria-labelledby={`${rail.id}-heading`}>
-      <div className="flex items-end justify-between gap-4 px-4 sm:px-6 lg:px-10">
-        <div>
-          <h2 id={`${rail.id}-heading`} className="text-xl font-black text-cinenova-ivory sm:text-2xl">
-            {rail.title}
+    <section className="mt-8" aria-labelledby={`rail-${id}`}>
+      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-2">
+          <h2 id={`rail-${id}`} className="text-base font-semibold text-foreground">
+            {title}
           </h2>
-          {rail.subtitle ? <p className="mt-1 text-sm text-cinenova-muted">{rail.subtitle}</p> : null}
+          <ChevronRight aria-hidden="true" className="h-4 w-4 text-muted" />
         </div>
+        {subtitle ? <p className="hidden text-xs text-muted sm:block">{subtitle}</p> : null}
       </div>
-      <div className="scrollbar-none flex gap-4 overflow-x-auto px-4 pb-4 sm:px-6 lg:px-10">
-        {rail.items.map((title) => (
-          <PosterCard key={title.id} title={title} href={`/title/${title.slug}`} />
-        ))}
+      <div className="scrollbar-none mt-3 flex gap-3 overflow-x-auto px-4 sm:px-6 lg:px-8">
+        {items.map((item) =>
+          variant === 'stills' ? (
+            <StillsCard
+              key={item.id}
+              title={item}
+              href={`/title/${item.slug}`}
+              progress={progress}
+              caption="Continue"
+              className="w-56 sm:w-72"
+            />
+          ) : (
+            <PosterCard
+              key={item.id}
+              title={item}
+              href={`/title/${item.slug}`}
+              className="w-28 sm:w-40"
+            />
+          ),
+        )}
       </div>
     </section>
   );

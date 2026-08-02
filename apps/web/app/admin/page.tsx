@@ -17,24 +17,24 @@ export default async function AdminPage() {
 
   return (
     <AppShell active="admin">
-      <section className="px-4 pb-28 pt-28 sm:px-6 lg:px-10">
+      <section className="px-4 pb-24 pt-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-10">
           <div className="space-y-4">
             <Badge>Admin RBAC surface</Badge>
-            <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">Operations Console</h1>
-            <p className="max-w-3xl text-cinenova-muted">
+            <h1 className="font-display text-3xl text-foreground sm:text-4xl">Operations Console</h1>
+            <p className="max-w-3xl text-sm text-muted">
               Admin features are server-enforced and audited. This milestone provides the IA and
               provider health contract while deeper mutations remain behind RBAC implementation.
             </p>
           </div>
-          <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-cinenova-accent">Provider health</p>
-            <h2 className="mt-2 text-2xl font-black text-white">{health.provider}</h2>
-            <p className="mt-2 text-cinenova-muted">{health.status} · {health.message}</p>
+          <div className="rounded-md border border-border bg-surface p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary">Provider health</p>
+            <h2 className="mt-2 text-2xl font-display text-foreground">{health.provider}</h2>
+            <p className="mt-2 text-sm text-muted">{health.status} · {health.message}</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {modules.map((module) => (
-              <div key={module} className="rounded-3xl border border-white/10 bg-white/6 p-5 text-cinenova-muted">
+              <div key={module} className="rounded-md border border-border bg-surface p-5 text-sm text-muted">
                 {module}
               </div>
             ))}
