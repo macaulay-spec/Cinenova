@@ -1,0 +1,28 @@
+# Render blueprint for CineNova (Next.js web app in a pnpm monorepo).
+# This makes the deploy reproducible — Render will use these commands.
+services:
+  - type: web
+    name: cinenova
+    runtime: node
+    plan: free
+    buildCommand: |
+      NODE_ENV=development pnpm install --frozen-lockfile
+      pnpm --filter @cinenova/web build
+    startCommand: pnpm --filter @cinenova/web start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PERSISTENCE
+        value: memory
+      - key: PROVIDER_ROUTING
+        value: gzmovie
+      - key: GZMOVIE_ENABLED
+        value: "true"
+      - key: GZMOVIE_BASE_URL
+        value: https://zstlab.cyou
+      - key: GZMOVIE_LEGACY_API_KEY
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: CSRF_SECRET
+        sync: false
