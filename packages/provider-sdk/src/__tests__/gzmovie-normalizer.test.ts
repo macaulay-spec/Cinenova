@@ -63,9 +63,41 @@ const homepageResponse = {
   statusCode: 200,
   endpoint: '/api/homepage',
   data: {
-    banners: [{ subjectId: '758465225426354376', title: 'Genesis', detailPath: 'genesis-MStWSChM1U' }],
-    trending: [],
-    newReleases: [],
+    homeList: [],
+    topPickList: [],
+    operatingList: [
+      {
+        type: 'BANNER',
+        position: 1,
+        title: 'Banner_Africa',
+        banner: {
+          items: [
+            {
+              id: '0',
+              title: 'The Avengers',
+              image: { url: 'https://pbcdnw.aoneroom.com/image/2026/01/27/y.jpg' },
+              url: 'https://h5.aoneroom.com/detail/the-avengers-ChBgfByIJ86',
+              subjectId: '5154075108704669480',
+              subjectType: 1,
+              subject: {
+                subjectId: '5154075108704669480',
+                subjectType: 1,
+                title: 'The Avengers',
+                description: 'Earths mightiest heroes.',
+                releaseDate: '2012-05-04',
+                duration: 8580,
+                genre: 'Action,Sci-Fi',
+                cover: { url: 'https://pbcdnw.aoneroom.com/image/2026/01/27/y.jpg' },
+                countryName: 'United States',
+                imdbRatingValue: '8.0',
+                detailPath: 'the-avengers-ChBgfByIJ86',
+              },
+              detailPath: 'the-avengers-ChBgfByIJ86',
+            },
+          ],
+        },
+      },
+    ],
   },
 };
 
@@ -127,11 +159,12 @@ describe('gzmovie normalizer', () => {
     expect(search.suggestions).toContain('The Avengers');
   });
 
-  it('builds a home response with hero and rails from fallback items', () => {
+  it('builds a home response with a real banner hero', () => {
     const home = toHomeResponse(homepageResponse, extractItems(searchResponse));
-    expect(home.hero.title).toBe('AVENGERS'); // banner has no artwork, hero picks first fallback with poster
+    expect(home.hero.title).toBe('The Avengers'); // from operatingList banner.subject
+    expect(home.hero.slug).toBe('the-avengers-ChBgfByIJ86');
     expect(home.rails.length).toBeGreaterThan(0);
-    expect(home.rails[0]?.items.length).toBe(3);
+    expect(home.rails[0]?.items.length).toBeGreaterThan(0);
   });
 
   it('extracts a subject from item-details', () => {

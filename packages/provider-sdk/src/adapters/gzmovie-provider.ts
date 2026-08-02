@@ -286,7 +286,15 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
     documentedGetRouteSchema.parse(route);
     const url = new URL(route, this.config.baseUrl);
     params.forEach((value, key) => url.searchParams.set(key, value));
+    this.setAuthQuery(url);
     return this.fetchJson(url, { method: 'GET' });
+  }
+
+  /** Append the API key as a query param when present (proven auth method). */
+  private setAuthQuery(url: URL): void {
+    if (this.config.apiKey && !url.searchParams.has('apikey')) {
+      url.searchParams.set('apikey', this.config.apiKey);
+    }
   }
 
   private async post(
@@ -295,6 +303,7 @@ export class GZMovieProviderAdapter implements StreamingCatalogProvider {
   ): Promise<unknown> {
     documentedPostRouteSchema.parse(route);
     const url = new URL(route, this.config.baseUrl);
+    this.setAuthQuery(url);
     return this.fetchJson(url, {
       method: 'POST',
       body: JSON.stringify(body),

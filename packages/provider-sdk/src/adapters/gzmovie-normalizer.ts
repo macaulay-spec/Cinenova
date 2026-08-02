@@ -150,16 +150,44 @@ export function extractItems(raw: unknown): GzItem[] {
   return [];
 }
 
-/** Extract the hero banner list (homepage data.banners). */
+/** Extract the hero banner list from homepage data.operatingList[].banner.items[]. */
 export function extractBanners(raw: unknown): GzItem[] {
   const data = unwrapPayload(raw);
   if (data && typeof data === 'object') {
-    const banners = (data as Record<string, unknown>).banners;
-    if (Array.isArray(banners)) {
-      return banners as GzItem[];
+    const operatingList = (data as Record<string, unknown>).operatingList;
+    if (Array.isArray(operatingList)) {
+      const items: GzItem[] = [];
+      for (const block of operatingList) {
+        if (!block || typeof block !== 'object') {
+          continue;
+        }
+        const banner = (block as Record<string, unknown>).banner;
+        if (banner && typeof banner === 'object') {
+          const bannerItems = (banner as Record<string, unknown>).items;
+          if (Array.isArray(bannerItems)) {
+            items.push(...(bannerItems as GzItem[]));
+          }
+        }
+      }
+      return items;
     }
   }
   return [];
+}
+
+/**
+ * Extract a full `subject` object from a banner/search/home item. Homepage
+ * banner items wrap their full detail under `.subject`; search items expose the
+ * fields directly on the item.
+ */
+export function resolveSubject(item: GzItem): GzItem {
+  if (item && typeof item === 'object') {
+    const subject = (item as Record<string, unknown>).subject;
+    if (subject && typeof subject === 'object') {
+      return subject as GzItem;
+    }
+  }
+  return item;
 }
 
 /** Extract a single subject detail (item-details data.subject). */
@@ -379,29 +407,31 @@ export function toTitleSummary(detail: TitleDetail): TitleSummary {
 
 /** Build a home response from homepage data + fallback catalogue items. */
 export function toHomeResponse(raw: unknown, fallbackItems: GzItem[] = []): Omit<HomeResponse, 'generatedAt'> {
-  const banners = extractBanners(raw);
+  const banners = extractBanners(raw).map(resolveSubject);
   const data = unwrapPayload(raw) as Record<string, unknown> | null;
-  const trending = Array.isArray(data?.trending) ? (data!.trending as GzItem[]) : [];
-  const newReleases = Array.isArray(data?.newReleases) ? (data!.newReleases as GzItem[]) : [];
+  const homeList = Array.isArray(data?.homeList) ? (data!.homeList as GzItem[]) : [];
+  const topPickList = Array.isArray(data?.topPickList) ? (data!.topPickList as GzItem[]) : [];
 
-  const railItems = [...trending, ...newReleases, ...fallbackItems].slice(0, 40).map(toTitleDetail);
+  const bannerDetails = banners.map(toTitleDetail);
+  const railItems = [...bannerDetails, ...homeList, ...topPickList, ...fallbackItems]
+    .slice(0, 40)
+    .map(toTitleDetail);
 
-  let hero = banners[0] ? toTitleDetail(banners[0]) : railItems[0] ?? null;
-  // If the banner lacks artwork, prefer a fallback item with a poster as hero.
-  if (hero && hero.artwork.length === 0) {
-    const withPoster = railItems.find((item) => item.artwork.length > 0);
-    if (withPoster) {
-      hero = withPoster;
-    }
-  }
+  // Hero: first banner that has a poster, else first rail item.
+  const hero =
+    bannerDetails.find((item) => item.artwork.length > 0) ??
+    railItems.find((item) => item.artwork.length > 0) ??
+    bannerDetails[0] ??
+    railItems[0] ??
+    toTitleDetail({});
 
   return {
-    hero: hero ?? toTitleDetail({}),
+    hero,
     rails: [
       {
-        id: 'zst-trending',
-        title: 'Trending Now',
-        subtitle: 'Popular titles from the catalogue',
+        id: 'zst-featured',
+        title: 'Featured on CineNova',
+        subtitle: 'Hand-picked titles from the catalogue',
         items: railItems.map(toTitleSummary),
       },
       {
