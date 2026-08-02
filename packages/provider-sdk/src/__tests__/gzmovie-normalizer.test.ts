@@ -159,12 +159,18 @@ describe('gzmovie normalizer', () => {
     expect(search.suggestions).toContain('The Avengers');
   });
 
-  it('builds a home response with a real banner hero', () => {
+  it('builds a home response with a real banner hero and non-empty slugs', () => {
     const home = toHomeResponse(homepageResponse, extractItems(searchResponse));
     expect(home.hero.title).toBe('The Avengers'); // from operatingList banner.subject
     expect(home.hero.slug).toBe('the-avengers-ChBgfByIJ86');
     expect(home.rails.length).toBeGreaterThan(0);
     expect(home.rails[0]?.items.length).toBeGreaterThan(0);
+    // Regression: every rail item must keep a non-empty slug (detailPath).
+    for (const rail of home.rails) {
+      for (const item of rail.items) {
+        expect(item.slug.length).toBeGreaterThan(0);
+      }
+    }
   });
 
   it('extracts a subject from item-details', () => {

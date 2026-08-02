@@ -413,9 +413,13 @@ export function toHomeResponse(raw: unknown, fallbackItems: GzItem[] = []): Omit
   const topPickList = Array.isArray(data?.topPickList) ? (data!.topPickList as GzItem[]) : [];
 
   const bannerDetails = banners.map(toTitleDetail);
-  const railItems = [...bannerDetails, ...homeList, ...topPickList, ...fallbackItems]
-    .slice(0, 40)
-    .map(toTitleDetail);
+  // Only raw GzItems need mapping; bannerDetails are already TitleDetails and
+  // must NOT be re-mapped (they have slug, not detailPath).
+  const railItems = [
+    ...bannerDetails,
+    ...[...homeList, ...topPickList, ...fallbackItems].map(toTitleDetail),
+  ]
+    .slice(0, 40);
 
   // Hero: first banner that has a poster, else first rail item.
   const hero =
