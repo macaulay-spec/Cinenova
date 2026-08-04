@@ -9,6 +9,8 @@
 <meta property="og:title" content="For Aria — A Universe of You">
 <meta property="og:description" content="Scroll through a universe built for one person. Memories, promises, and a secret written in the stars.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="assets/poster.jpg">
+<link rel="preload" as="image" href="assets/poster.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%9D%A4%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"CreativeWork","name":"For Aria — A Universe of You","description":"A single-file cinematic interactive love experience.","inLanguage":"en"}
@@ -172,6 +174,27 @@ html.light #musicDock{background:rgba(255,255,255,.6)}
   animation:pulseBtn 2.6s ease-in-out infinite}
 @keyframes pulseBtn{0%,100%{box-shadow:0 0 0 0 rgba(234,182,173,.30)}50%{box-shadow:0 0 44px 4px rgba(234,182,173,.22)}}
 @keyframes twk{from{opacity:.35}to{opacity:1}}
+
+/* ── Title card (movie opening) + film grain ────────────────────── */
+#titleCard{position:fixed;inset:0;z-index:97;background:#030410;display:none;place-items:center;overflow:hidden;transition:opacity 1s var(--ease)}
+#titleCard.show{display:grid}
+#titleCard.bye{opacity:0}
+.tc-bg{position:absolute;inset:0;background:url('assets/poster.jpg') center 40%/cover no-repeat;
+  opacity:0;transform:scale(1.14);transition:opacity 1.8s ease,transform 4.5s var(--ease)}
+#titleCard.show .tc-bg{opacity:1;transform:scale(1)}
+#titleCard::after{content:'';position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg,rgba(3,4,16,.15),rgba(3,4,16,.5) 72%,rgba(3,4,16,.88))}
+.tc-content{position:relative;z-index:2;text-align:center;padding:0 22px}
+.tc-studio{font-size:.66rem;letter-spacing:.62em;text-transform:uppercase;color:var(--rose);opacity:0;transition:opacity 1.2s .5s;font-weight:600}
+.tc-title{font-family:var(--serif);font-weight:300;font-size:clamp(2.4rem,7vw,4.9rem);line-height:1.05;
+  color:var(--warm);margin-top:20px;opacity:0;transition:opacity 1.5s 1s;letter-spacing:.02em;
+  text-shadow:0 0 44px rgba(234,182,173,.35)}
+.tc-for{margin-top:16px;font-family:var(--serif);font-style:italic;color:var(--lav);opacity:0;transition:opacity 1.2s 1.7s;font-size:1.1rem;letter-spacing:.24em}
+#titleCard.show .tc-studio,#titleCard.show .tc-title,#titleCard.show .tc-for{opacity:1}
+#grain{position:fixed;inset:-120px;z-index:99;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.62'/%3E%3C/svg%3E");
+  animation:grain 9s steps(10) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-28px,18px)}40%{transform:translate(22px,-24px)}60%{transform:translate(-16px,-12px)}80%{transform:translate(26px,20px)}100%{transform:translate(0,0)}}
 
 /* ── Layout & shared scene styles ───────────────────────────────── */
 main{position:relative;z-index:10}
@@ -421,6 +444,10 @@ h1 em{font-style:italic;background:linear-gradient(100deg,var(--rose) 10%,var(--
 .date-emoji{font-size:2.6rem;filter:drop-shadow(0 0 20px var(--glow-rose))}
 .date-title{font-family:var(--serif);font-size:1.9rem;margin:10px 0 8px;font-weight:500}
 .date-desc{color:var(--ink-dim);font-weight:300;font-size:.92rem}
+.date-plan{list-style:none;margin-top:16px;text-align:left;display:inline-block}
+.date-plan li{margin-top:8px;font-family:var(--serif);font-style:italic;color:var(--ink-dim);font-size:.92rem;
+  padding-left:20px;position:relative}
+.date-plan li::before{content:'✦';position:absolute;left:0;color:var(--rose);font-size:.66rem;top:.28em}
 #dateConfirm{margin-top:20px}
 
 /* ── Scene 9 · Promise Wall ─────────────────────────────────────── */
@@ -458,6 +485,7 @@ footer .f-sub{margin-top:10px;font-size:.78rem;letter-spacing:.26em;text-transfo
 #secretNames{font-family:var(--serif);font-weight:300;font-size:clamp(2.4rem,7vw,4.6rem);margin:16px 0 8px;opacity:0;
   background:linear-gradient(100deg,var(--gold),var(--rose) 45%,var(--lav));-webkit-background-clip:text;background-clip:text;color:transparent}
 .secret-line{font-family:var(--serif);font-style:italic;font-size:clamp(1.1rem,3vw,1.5rem);color:var(--warm);opacity:0;margin-top:10px}
+.secret-credits{margin-top:26px;font-size:.62rem;letter-spacing:.4em;text-transform:uppercase;color:var(--ink-dim);opacity:0}
 .secret-actions{margin-top:44px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center;opacity:0;pointer-events:auto}
 .sunrise{position:absolute;left:0;right:0;bottom:0;height:60%;z-index:2;transform:translateY(101%);
   transition:transform 5s var(--ease);pointer-events:none;
@@ -510,6 +538,17 @@ footer .f-sub{margin-top:10px;font-size:.78rem;letter-spacing:.26em;text-transfo
     <div id="enterWrap"><button id="enterBtn">tap to begin ✦</button></div>
   </div>
 </div>
+
+<!-- ═══ Movie-style title card ═══ -->
+<div id="titleCard" aria-hidden="true">
+  <div class="tc-bg"></div>
+  <div class="tc-content">
+    <p class="tc-studio">Cinenova Original</p>
+    <h2 class="tc-title">A Universe of You</h2>
+    <p class="tc-for">for <span id="tcName">Aria</span></p>
+  </div>
+</div>
+<div id="grain" aria-hidden="true"></div>
 
 <!-- ═══ Chrome ═══ -->
 <div id="progress" aria-hidden="true"></div>
@@ -671,6 +710,8 @@ footer .f-sub{margin-top:10px;font-size:.78rem;letter-spacing:.26em;text-transfo
         <div class="date-emoji" id="dateEmoji" aria-hidden="true">✨</div>
         <h3 class="date-title" id="dateTitle">…</h3>
         <p class="date-desc" id="dateDesc"></p>
+        <ul class="date-plan" id="datePlan"></ul>
+        <br>
         <button class="btn" id="dateConfirm">it's a date ✦</button>
       </div>
     </div>
@@ -729,6 +770,7 @@ footer .f-sub{margin-top:10px;font-size:.78rem;letter-spacing:.26em;text-transfo
     <h2 id="secretNames">Aria ♥ Leo</h2>
     <p class="secret-line" id="secLine1">Thank you for existing.</p>
     <p class="secret-line" id="secLine2">Happy Birthday.</p>
+    <p class="secret-credits" id="secCredits"></p>
     <div class="secret-actions" id="secActions">
       <button class="btn ghost" id="secretStay">stay a little longer</button>
       <button class="btn" id="secretRestart">back to the beginning</button>
@@ -767,23 +809,23 @@ const CONFIG = {
   /* ✦ MEMORIES — the six planets of the Memory Galaxy.
         Replace emoji/palette with real photo URLs by setting `photo`. */
   memories: [
-    { title:'The First Hello', date:'October 12, 2022', emoji:'☕', c1:'#5b4a8a', c2:'#191238', photo:'',
-      story:'A crowded café, one free chair, and you asking if the seat was taken. It wasn’t. My whole future was.',
+    { title:'The First Hello', date:'October 12, 2022', emoji:'☕', c1:'#5b4a8a', c2:'#191238', photo:'assets/memory-01.jpg',
+      story:'Scene one: a crowded café, exactly one free chair, and you asking if the seat was taken. It wasn’t. My whole future was.',
       voice:'“Hi. Is this seat taken?” — still my favorite sentence in any language.' },
-    { title:'Golden Hour', date:'November 3, 2022', emoji:'🌅', c1:'#c96f5a', c2:'#3a1c33', photo:'',
-      story:'We chased the sunset to the top of the hill and missed it on purpose, because the walk with you was better.',
+    { title:'Golden Hour', date:'November 3, 2022', emoji:'🌅', c1:'#c96f5a', c2:'#3a1c33', photo:'assets/memory-02.jpg',
+      story:'We hiked the hill with cold lemonade and grand ambitions — then missed the exact sunset moment on purpose, because the walk with you kept being better than the view.',
       voice:'“The sky did all that… and I still couldn’t look away from you.”' },
-    { title:'Midnight Laughter', date:'January 21, 2023', emoji:'🌙', c1:'#39477f', c2:'#0d1230', photo:'',
-      story:'Two a.m., cold fries, and a joke so bad it looped back into genius. We laughed until the city went quiet.',
+    { title:'Midnight Laughter', date:'January 21, 2023', emoji:'🌙', c1:'#39477f', c2:'#0d1230', photo:'assets/memory-03.jpg',
+      story:'Two a.m., one bench, cold fries we swore were “still amazing.” A joke so bad it looped back into genius, and we laughed until the whole street went quiet.',
       voice:'“I don’t even remember the joke. I remember your laugh.”' },
-    { title:'The Road to Nowhere', date:'June 9, 2023', emoji:'🚗', c1:'#7a5fa0', c2:'#241540', photo:'',
-      story:'No destination, one playlist, windows down. Somewhere past mile 40 I realized “anywhere” means “with you.”',
+    { title:'The Road to Nowhere', date:'June 9, 2023', emoji:'🚗', c1:'#7a5fa0', c2:'#241540', photo:'assets/memory-04.jpg',
+      story:'No destination, one shared playlist, windows down, wrong turns chosen on purpose. Somewhere past mile forty I realized “anywhere” has a definition now, and it’s “with you.”',
       voice:'“Next exit: wherever you want. I’m serious. Pick.”' },
-    { title:'Dancing in the Kitchen', date:'February 14, 2024', emoji:'💃', c1:'#b0576e', c2:'#33122b', photo:'',
-      story:'Dinner nearly burned because neither of us would stop dancing. Best meal we almost ruined, ever.',
+    { title:'Dancing in the Kitchen', date:'February 14, 2024', emoji:'💃', c1:'#b0576e', c2:'#33122b', photo:'assets/memory-05.jpg',
+      story:'The pasta was officially dinner and unofficially an excuse: three songs in, flour everywhere, neither of us willing to stop dancing. Best meal we almost ruined, ever.',
       voice:'“The pasta can wait. This song can’t.”' },
-    { title:'Under the Same Sky', date:'August 14, 2025', emoji:'✨', c1:'#8e7cc3', c2:'#10143a', photo:'',
-      story:'Your last birthday — blankets, meteors, and you naming every star wrong with total confidence. Perfect night.',
+    { title:'Under the Same Sky', date:'August 14, 2025', emoji:'✨', c1:'#8e7cc3', c2:'#10143a', photo:'assets/memory-06.jpg',
+      story:'Your last birthday — one blanket, two thermoses, and a meteor at 11:47 exactly like the forecast promised. You named every constellation wrong with total confidence. Perfect night.',
       voice:'“Make a wish. Actually — don’t tell me. I already know what I’d wish for.”' }
   ],
 
@@ -840,14 +882,22 @@ Whatever this year brings, know this: you will be loved on every single day of i
 
   /* ✦ DATE WHEEL — the eight possible futures */
   dates: [
-    { icon:'🎬', name:'Movie Night', desc:'Blankets, popcorn, and your head on my shoulder. I’ll pretend I haven’t seen it.' },
-    { icon:'🌊', name:'Beach Date', desc:'Sand, salt, and slow hours. I’ll race you to the water and lose on purpose.' },
-    { icon:'🧺', name:'Picnic', desc:'Everything you love on one blanket, under one wide sky, beside one lucky person.' },
-    { icon:'🏛️', name:'Museum', desc:'Art, echoes, and you explaining everything better than the plaques do.' },
-    { icon:'🥂', name:'Fancy Dinner', desc:'Candlelight, dressed up, and me forgetting the menu because of you.' },
-    { icon:'🚗', name:'Road Trip', desc:'No destination, one playlist, windows down. “Anywhere” means “with you.”' },
-    { icon:'☕', name:'Coffee Date', desc:'Back where it started — one table, two cups, and all the time in the world.' },
-    { icon:'✨', name:'Surprise', desc:'I can’t tell you. That would ruin it. Just dress like you’re loved — because you are.' }
+    { icon:'🎬', name:'Movie Night', desc:'Blankets, popcorn, and your head on my shoulder. I’ll pretend I haven’t seen it.',
+      plan:['7:00 — build the blanket fort (architect: you, intern: me)','7:30 — popcorn with too much butter, exactly how we like it','8:00 — the movie starts; you fall asleep at minute 40, I pretend not to notice','10:30 — I carry the snacks to bed. Credits roll on us.'] },
+    { icon:'🌊', name:'Beach Date', desc:'Sand, salt, and slow hours. I’ll race you to the water and lose on purpose.',
+      plan:['9:00 — arrive early, claim the good spot, apply sunscreen like responsible adults','11:00 — ice cream that melts faster than we eat it','1:00 — the race. I lose. I always lose. The sea keeps our score','6:00 — stay for the sky to turn rose gold. Obviously.'] },
+    { icon:'🧺', name:'Picnic', desc:'Everything you love on one blanket, under one wide sky, beside one lucky person.',
+      plan:['Pack your favorites + one secret dessert I won’t explain','Bring the blanket, the cards, and zero plans after that','Lie back and name the clouds (your accuracy: 3%, your confidence: 100%)','Stay until the first star clocks in.'] },
+    { icon:'🏛️', name:'Museum', desc:'Art, echoes, and you explaining everything better than the plaques do.',
+      plan:['Start at your favorite exhibit — I want to watch you light up','Find the weirdest object and invent a dramatic backstory for it','Gift shop: one ridiculous souvenir, no debate','Coffee after, where you give the tour a final grade.'] },
+    { icon:'🥂', name:'Fancy Dinner', desc:'Candlelight, dressed up, and me forgetting the menu because of you.',
+      plan:['Dress-up hour, playlist on, photos in the hallway (mandatory)','The fancy place with the tiny portions and huge desserts','Order for each other — no take-backs','Nightcap on the rooftop. Toast to us, again.'] },
+    { icon:'🚗', name:'Road Trip', desc:'No destination, one playlist, windows down. “Anywhere” means “with you.”',
+      plan:['Departure: sunrise-ish. Destination: classified','Playlist rules: alternating songs, no skipping, veto by dance','Snack bag with a map of gas-station treasures','We stop wherever the light looks cinematic. Every 20 minutes.'] },
+    { icon:'☕', name:'Coffee Date', desc:'Back where it started — one table, two cups, and all the time in the world.',
+      plan:['Our café. Our table. Yes, I’m sentimental, so what?','Order what we had on day one — I checked, they still make it','One hour of no phones, just us and the window light','Leave a tip big enough to fund the barista’s dreams.'] },
+    { icon:'✨', name:'Surprise', desc:'I can’t tell you. That would ruin it. Just dress like you’re loved — because you are.',
+      plan:['Clue #1 arrives at noon. Trust the process','Wear the shoes you love; there will be walking and wondering','Clue #2 at sunset. Someone you love is involved','Final reveal under the stars. I’ll be there before you are.'] }
   ],
 
   /* ✦ REASONS — 100 notes for the bottles (add/remove freely; the field adapts) */
@@ -1356,12 +1406,29 @@ const Loader=(()=>{
     document.body.classList.add('entered');
     $('#musicDock').classList.add('show');
     $('#monogram').style.opacity=1; $('#themeBtn').style.opacity=1;
-    Experience.start();
-    if(Hero.isBirthdayToday()){
-      setTimeout(()=>{ fireworks(4); confettiBurst({particleCount:140,spread:110,origin:{y:.4}}); },900);
-    }
+    TitleCard.play();
   }
   return { run, get entered(){return entered;} };
+})();
+
+/* ══════════════════════════════════════════════════════════════════
+   TITLE CARD — the "Cinenova Original" opening shot
+   ══════════════════════════════════════════════════════════════════ */
+const TitleCard=(()=>{
+  function play(){
+    const tc=$('#titleCard');
+    $('#tcName').textContent=CONFIG.names.her;
+    tc.classList.add('show');
+    setTimeout(()=>{
+      tc.classList.add('bye');
+      setTimeout(()=>tc.classList.remove('show','bye'),1100);
+      Experience.start();
+      if(Hero.isBirthdayToday()){
+        setTimeout(()=>{ fireworks(4); confettiBurst({particleCount:140,spread:110,origin:{y:.4}}); },800);
+      }
+    }, REDUCED?700:3800);
+  }
+  return { play };
 })();
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1436,7 +1503,9 @@ function buildGalaxy(){
     b.setAttribute('aria-label','Open memory: '+m.title);
     const img=document.createElement('img');
     img.className='p-img'; img.loading='lazy'; img.decoding='async';
-    img.alt=m.title+' — memory'; img.src=memoryArt(m);
+    img.alt=m.title+' — memory';
+    img.onerror=()=>{ img.onerror=null; img.src=memoryArt(m); };
+    img.src=m.photo||memoryArt(m);
     const cap=document.createElement('span'); cap.className='p-cap'; cap.textContent=m.title;
     b.appendChild(img); b.appendChild(cap);
     b.addEventListener('click',()=>openMemory(i,b));
@@ -1445,7 +1514,10 @@ function buildGalaxy(){
 }
 function openMemory(i,el){
   const m=CONFIG.memories[i];
-  $('#memImg').src=memoryArt(m); $('#memImg').alt=m.title+' — memory';
+  const mi=$('#memImg');
+  mi.onerror=()=>{ mi.onerror=null; mi.src=memoryArt(m); };
+  mi.src=m.photo||memoryArt(m);
+  mi.alt=m.title+' — memory';
   $('#memDate').textContent=m.date;
   $('#memTitle').textContent=m.title;
   $('#memStory').textContent=m.story;
@@ -1842,6 +1914,17 @@ const Wheel=(()=>{
       $('#dateEmoji').textContent=d.icon;
       $('#dateTitle').textContent=d.name;
       $('#dateDesc').textContent=d.desc;
+      const plan=$('#datePlan'); plan.innerHTML='';
+      (d.plan||[]).forEach((step,i)=>{
+        const li=document.createElement('li');
+        li.textContent=step;
+        li.style.opacity=0; li.style.transform='translateY(8px)';
+        plan.appendChild(li);
+        setTimeout(()=>{
+          li.style.transition='opacity .8s var(--ease),transform .8s var(--ease)';
+          li.style.opacity=1; li.style.transform='none';
+        },500+i*280);
+      });
       $('#dateCard').classList.add('show');
       confettiBurst({particleCount:130,spread:100,origin:{y:.45}});
       fireworks(3); vibrate([20,60,30]); AudioFX.chime();
@@ -1899,10 +1982,11 @@ function buildPromises(){
    ══════════════════════════════════════════════════════════════════ */
 const Secret=(()=>{
   let openFlag=false, rafId=null, parts=[], t0=0, timers=[];
-  const TEXTS=['#secKicker','#secretNames','#secLine1','#secLine2','#secActions'];
+  const TEXTS=['#secKicker','#secretNames','#secLine1','#secLine2','#secActions','#secCredits'];
   function open(){
     if(openFlag) return; openFlag=true;
     const overlay=$('#secret'); overlay.classList.add('open'); stopScroll();
+    $('#secCredits').textContent='directed by '+CONFIG.names.me+' · starring '+CONFIG.names.her+' · written in the stars';
     const cv=$('#secretCanvas'), g=cv.getContext('2d');
     const W=innerWidth,H=innerHeight,DPR=Math.min(devicePixelRatio||1,2);
     cv.width=W*DPR; cv.height=H*DPR; g.setTransform(DPR,0,0,DPR,0,0);
@@ -1933,7 +2017,7 @@ const Secret=(()=>{
       g.shadowBlur=0; g.globalAlpha=1;
       rafId=requestAnimationFrame(loop);
     })(t0);
-    const seq=[[0,1400],[1,2100],[2,3000],[3,3600],[4,4500]];
+    const seq=[[0,1400],[1,2100],[2,3000],[3,3600],[4,4500],[5,5400]];
     seq.forEach(([k,d])=>timers.push(setTimeout(()=>{
       const el=$(TEXTS[k]);
       if(window.gsap) gsap.fromTo(el,{opacity:0,y:16},{opacity:1,y:0,duration:1.2,ease:'power3.out'});
