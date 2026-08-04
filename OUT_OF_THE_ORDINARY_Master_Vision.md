@@ -117,7 +117,11 @@ drag; "skip →" jumps to doors. Keyboard: space pause, → skip.
 - **ord-fridge** "a fridge door covered in printed photos, magnets and a child's drawing of two stick figures holding hands, warm kitchen spill-light." (muted)
 - **ord-window** "rain trails on a window, two mugs on the sill, a shared blanket draped over a chair, grey-blue quiet light." (muted)
 - **ord-tickets** "two creased cinema ticket stubs and a polaroid of the couple mid-laugh on a wooden table, soft lamp light." (muted)
-- **fut-road** FUTURE + "the same vintage car parked on the same road at dusk; two grey-haired figures leaning on the hood exactly like the young version."
+
+> **v3 FINAL SET SHIPPED:** couple locked at 20–21 with the "boring perfect
+> real photo" recipe (cracked screens, dish racks, JPEG noise, tilted
+> horizons). **fut-road** added to the finale: the same rusted car, same
+> road, fifty years later.
 
 ## 6. VOICEOVER SCRIPTS (one consistent "him")
 
