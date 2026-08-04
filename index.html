@@ -196,6 +196,41 @@ html.light #musicDock{background:rgba(255,255,255,.6)}
   animation:grain 9s steps(10) infinite}
 @keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-28px,18px)}40%{transform:translate(22px,-24px)}60%{transform:translate(-16px,-12px)}80%{transform:translate(26px,20px)}100%{transform:translate(0,0)}}
 
+/* ── FILM MODE — the auto-play 3:11 cinema ──────────────────────── */
+#film{position:fixed;inset:0;z-index:93;background:#020309;display:none;overflow:hidden}
+#film.open{display:block}
+#film .still{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;
+  transition:opacity 1.2s ease,filter 2.2s ease;transform:scale(1.06)}
+#film .still.on{opacity:1;animation:kenburns 15s ease-in-out infinite alternate}
+@keyframes kenburns{from{transform:scale(1.06)}to{transform:scale(1.17) translate(-1.4%,1.2%)}}
+html.act-ordinary #film .still{filter:grayscale(.93) contrast(.92) brightness(.94)}
+#film .bar{position:absolute;left:0;right:0;height:9vh;background:#000;z-index:3}
+#film .bar.top{top:0}#film .bar.bot{bottom:0}
+#filmCap{position:absolute;left:50%;bottom:12vh;transform:translateX(-50%);z-index:4;max-width:86vw;
+  text-align:center;font-family:var(--serif);font-style:italic;color:var(--warm);
+  font-size:clamp(1.15rem,3.6vw,2rem);text-shadow:0 2px 26px rgba(0,0,0,.85);
+  opacity:0;transition:opacity .9s var(--ease)}
+#filmCap.show{opacity:1}
+#filmCap.slam{font-style:normal;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  font-size:clamp(1.5rem,6vw,3.6rem);
+  background:linear-gradient(100deg,var(--gold),var(--rose) 45%,var(--lav));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 34px rgba(234,182,173,.4))}
+#filmHair{position:absolute;top:0;left:0;height:3px;width:0%;z-index:6;
+  background:linear-gradient(90deg,var(--rose-deep),var(--lav));box-shadow:0 0 12px var(--glow-rose)}
+#filmCtrls{position:absolute;right:16px;bottom:calc(9vh + 14px);z-index:6;display:flex;gap:10px}
+#filmCtrls button{min-width:42px;height:42px;border-radius:50%;border:1px solid var(--glass-brd);
+  background:rgba(8,8,20,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  color:var(--warm);font-size:.9rem;transition:transform .4s var(--ease),box-shadow .4s}
+#filmCtrls button:hover{transform:scale(1.08);box-shadow:0 0 18px var(--glow-rose)}
+#filmSong{width:auto;padding:0 18px;border-radius:99px!important;font-size:.7rem;letter-spacing:.16em}
+#filmDoors{position:absolute;inset:0;z-index:7;display:none;place-items:center;text-align:center;
+  background:rgba(2,3,9,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:24px}
+#filmDoors.show{display:grid}
+#filmDoors .d-credits{font-size:.64rem;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--ink-dim);margin-bottom:30px;line-height:2.4}
+#filmDoors .doors{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
 /* ── Layout & shared scene styles ───────────────────────────────── */
 main{position:relative;z-index:10}
 .scene{position:relative;padding:clamp(96px,16vh,180px) 22px;max-width:1140px;margin:0 auto}
@@ -245,6 +280,7 @@ h1 em{font-style:italic;background:linear-gradient(100deg,var(--rose) 10%,var(--
   -webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 0 34px rgba(233,200,147,.3));animation:glowText 3.4s ease-in-out infinite alternate}
 @keyframes glowText{from{filter:drop-shadow(0 0 16px rgba(233,200,147,.18))}to{filter:drop-shadow(0 0 40px rgba(234,182,173,.4))}}
+.hero-years{margin-top:16px;font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;color:var(--ink-dim)}
 #scrollHint{position:absolute;left:50%;bottom:-64px;bottom:-8svh;transform:translateX(-50%);color:var(--ink-dim);
   font-size:.66rem;letter-spacing:.4em;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:12px}
 #scrollHint::after{content:'';width:1px;height:52px;background:linear-gradient(var(--rose),transparent);
@@ -576,6 +612,31 @@ footer .f-sub{margin-top:10px;font-size:.78rem;letter-spacing:.26em;text-transfo
 </div>
 <div id="grain" aria-hidden="true"></div>
 
+<!-- ═══ FILM MODE — auto-play cinema ═══ -->
+<div id="film" aria-label="Cinenova film — out of the ordinary">
+  <img class="still" id="stillA" alt="">
+  <img class="still" id="stillB" alt="">
+  <div class="bar top" aria-hidden="true"></div>
+  <div class="bar bot" aria-hidden="true"></div>
+  <p id="filmCap"></p>
+  <div id="filmHair" aria-hidden="true"></div>
+  <div id="filmCtrls">
+    <button id="filmPause" aria-label="Pause film">⏸</button>
+    <button id="filmSkip" aria-label="Skip to the end">✦</button>
+    <button id="filmSong" aria-label="Use my own song">♪ my song</button>
+  </div>
+  <input type="file" id="filmFile" accept="audio/*" hidden>
+  <div id="filmDoors">
+    <div>
+      <p class="d-credits" id="dCredits"></p>
+      <div class="doors">
+        <button class="btn" id="doorReplay">↺ replay the film</button>
+        <button class="btn ghost" id="doorWander">✦ wander the universe</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ Chrome ═══ -->
 <div id="progress" aria-hidden="true"></div>
 <div id="cursor-glow" aria-hidden="true"></div>
@@ -590,6 +651,7 @@ footer .f-sub{margin-top:10px;font-size:.78rem;letter-spacing:.26em;text-transfo
   <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
   <input id="vol" type="range" min="0" max="100" value="55" aria-label="Volume">
   <button id="muteBtn" aria-label="Mute">♪</button>
+  <button id="filmBtn" aria-label="Watch the film">🎬</button>
 </div>
 
 <main id="main">
@@ -604,6 +666,7 @@ footer .f-sub{margin-top:10px;font-size:.78rem;letter-spacing:.26em;text-transfo
         <span class="line rv" data-delay="0.65"><em>my favorite human.</em></span>
       </h1>
       <div class="hero-ornament rv" data-delay="0.9" aria-hidden="true">✦ ✦ ✦</div>
+      <p class="hero-years rv" id="heroYears" data-delay="1.0"></p>
 
       <div id="countWrap" class="rv" data-delay="1.1">
         <p class="cd-label">her birthday arrives in</p>
@@ -832,6 +895,9 @@ const CONFIG = {
   /* ✦ NAMES — who is this universe for, and who built it */
   names: { her: 'Aria', me: 'Leo', initials: 'A ♥ L' },
 
+  /* ✦ TOGETHER SINCE — drives the anniversary counters (3 years) */
+  togetherSince: '2023-10-12',
+
   /* ✦ BIRTHDAY — month/day drive the hero (countdown OR "Happy Birthday") */
   birthday: { month: 8, day: 14 },
 
@@ -846,19 +912,19 @@ const CONFIG = {
   /* ✦ MEMORIES — the six planets of the Memory Galaxy.
         Replace emoji/palette with real photo URLs by setting `photo`. */
   memories: [
-    { title:'The First Hello', date:'October 12, 2022', emoji:'☕', c1:'#5b4a8a', c2:'#191238', photo:'assets/memory-01.jpg',
+    { title:'The First Hello', date:'October 12, 2023', emoji:'☕', c1:'#5b4a8a', c2:'#191238', photo:'assets/memory-01.jpg',
       story:'Scene one: a crowded café, exactly one free chair, and you asking if the seat was taken. It wasn’t. My whole future was.',
       voice:'“Hi. Is this seat taken?” — still my favorite sentence in any language.' },
-    { title:'Golden Hour', date:'November 3, 2022', emoji:'🌅', c1:'#c96f5a', c2:'#3a1c33', photo:'assets/memory-02.jpg',
+    { title:'Golden Hour', date:'November 3, 2023', emoji:'🌅', c1:'#c96f5a', c2:'#3a1c33', photo:'assets/memory-02.jpg',
       story:'We hiked the hill with cold lemonade and grand ambitions — then missed the exact sunset moment on purpose, because the walk with you kept being better than the view.',
       voice:'“The sky did all that… and I still couldn’t look away from you.”' },
-    { title:'Midnight Laughter', date:'January 21, 2023', emoji:'🌙', c1:'#39477f', c2:'#0d1230', photo:'assets/memory-03.jpg',
+    { title:'Midnight Laughter', date:'January 21, 2024', emoji:'🌙', c1:'#39477f', c2:'#0d1230', photo:'assets/memory-03.jpg',
       story:'Two a.m., one bench, cold fries we swore were “still amazing.” A joke so bad it looped back into genius, and we laughed until the whole street went quiet.',
       voice:'“I don’t even remember the joke. I remember your laugh.”' },
-    { title:'The Road to Nowhere', date:'June 9, 2023', emoji:'🚗', c1:'#7a5fa0', c2:'#241540', photo:'assets/memory-04.jpg',
+    { title:'The Road to Nowhere', date:'June 9, 2024', emoji:'🚗', c1:'#7a5fa0', c2:'#241540', photo:'assets/memory-04.jpg',
       story:'No destination, one shared playlist, windows down, wrong turns chosen on purpose. Somewhere past mile forty I realized “anywhere” has a definition now, and it’s “with you.”',
       voice:'“Next exit: wherever you want. I’m serious. Pick.”' },
-    { title:'Dancing in the Kitchen', date:'February 14, 2024', emoji:'💃', c1:'#b0576e', c2:'#33122b', photo:'assets/memory-05.jpg',
+    { title:'Dancing in the Kitchen', date:'February 14, 2025', emoji:'💃', c1:'#b0576e', c2:'#33122b', photo:'assets/memory-05.jpg',
       story:'The pasta was officially dinner and unofficially an excuse: three songs in, flour everywhere, neither of us willing to stop dancing. Best meal we almost ruined, ever.',
       voice:'“The pasta can wait. This song can’t.”' },
     { title:'Under the Same Sky', date:'August 14, 2025', emoji:'✨', c1:'#8e7cc3', c2:'#10143a', photo:'assets/memory-06.jpg',
@@ -868,24 +934,24 @@ const CONFIG = {
 
   /* ✦ TIMELINE — milestones of the story (tap to expand the detail line) */
   timeline: [
-    { date:'Oct 12, 2022', title:'We met', text:'A crowded room, a shared chair, and the easiest conversation of my life.',
+    { date:'Oct 12, 2023', title:'We met', text:'A crowded room, a shared chair, and the easiest conversation of my life.',
       detail:'You apologized for taking my seat — when I was the one who moved. I knew then I was in trouble.' },
-    { date:'Oct 13, 2022', title:'First conversation', text:'Three hours that felt like ten minutes. We closed the café.',
+    { date:'Oct 13, 2023', title:'First conversation', text:'Three hours that felt like ten minutes. We closed the café.',
       detail:'You talked about oceans. I forgot my coffee existed. The barista gave up on us.' },
-    { date:'Oct 19, 2022', title:'First laugh', text:'That laugh — head back, zero warning, completely contagious.',
+    { date:'Oct 19, 2023', title:'First laugh', text:'That laugh — head back, zero warning, completely contagious.',
       detail:'I’ve been trying to earn it ever since. Best job I’ve ever had.' },
-    { date:'Nov 2, 2022', title:'First picture', text:'Blurry, crooked, badly lit — and my favorite photo in existence.',
+    { date:'Nov 2, 2023', title:'First picture', text:'Blurry, crooked, badly lit — and my favorite photo in existence.',
       detail:'You blinked. I’m blurry. It hangs in my heart anyway.' },
-    { date:'Nov 18, 2022', title:'First date', text:'We said “one drink.” The city said “closing time.”',
+    { date:'Nov 18, 2023', title:'First date', text:'We said “one drink.” The city said “closing time.”',
       detail:'You ordered for me. Correctly. That’s when the heart filed its paperwork.' },
-    { date:'Today', title:'Still us', text:'Choosing each other, every single day, on purpose.',
+    { date:'Today', title:'Still us — year three', text:'Three anniversaries in. Choosing each other, every single day, on purpose.',
       detail:'And if time reset and I had to start again — I’d find you sooner.' }
   ],
 
   /* ✦ SCRAPBOOK — draggable polaroids; flip one to read the case notes */
   polaroids: [
     { img:'assets/pol-hoodie.jpg',  cap:'the great hoodie theft', rot:-7, x:7,  y:9,
-      note:'Case opened Oct ’22. Suspect: adorable. Verdict: she keeps it forever.' },
+      note:'Case opened Oct ’23. Suspect: adorable. Verdict: she keeps it forever.' },
     { img:'assets/pol-concert.jpg', cap:'parking-lot concert',    rot:5,  x:40, y:5,
       note:'Front row for the worst singer I’ve ever loved. Encore still pending.' },
     { img:'assets/pol-pancake.jpg', cap:'the pancake incident',   rot:-4, x:69, y:12,
@@ -897,6 +963,33 @@ const CONFIG = {
     { img:'assets/memory-06.jpg',   cap:'meteor night',           rot:6,  x:71, y:54,
       note:'You wished out loud. Lucky for you, I already had you.' }
   ],
+
+  /* ✦ FILM — the auto-play 3:11 cinema. Cues are % of duration, so the
+        film syncs to ANY song you bring (or the 191s synth clock). */
+  film: {
+    duration: 191,
+    cues: [
+      { p:0.00, black:1, cap:'they said our colors would fade.', vo:'filmopen' },
+      { p:0.04, img:'assets/ord-mugs.jpg',      cap:'two mugs. one windowsill.' },
+      { p:0.08, img:'assets/ord-keys.jpg',      cap:'your keys next to mine — the merger.' },
+      { p:0.12, img:'assets/ord-umbrella.jpg',  cap:'one umbrella, two shoulders.' },
+      { p:0.16, img:'assets/ord-laundry.jpg',   cap:'laundry day. holiest of holies.' },
+      { p:0.20, img:'assets/ord-groceries.jpg', cap:'the grocery run: a pilgrimage.' },
+      { p:0.24, black:1, cap:'and then — you.' },
+      { p:0.26, img:'assets/ord-mugs.jpg', turn:1, slam:1, cap:'OUT OF THE ORDINARY' },
+      { p:0.33, img:'assets/memory-01.jpg', cap:'scene one: the first hello.' },
+      { p:0.40, img:'assets/memory-02.jpg', cap:'you, spinning. me, ruined.' },
+      { p:0.47, img:'assets/memory-03.jpg', cap:'2am fries & forever talks.' },
+      { p:0.54, img:'assets/memory-04.jpg', cap:"anywhere, as long as it's with you." },
+      { p:0.61, img:'assets/memory-05.jpg', cap:'the pasta could wait.' },
+      { p:0.68, img:'assets/memory-06.jpg', cap:'you wished out loud. I already had you.' },
+      { p:0.75, black:1, cap:'you will be loved on every single day of it. the ordinary ones, most of all.' },
+      { p:0.82, img:'assets/fut-kitchen.jpg', cap:'same kitchen. fifty years on.', vo:'future' },
+      { p:0.89, img:'assets/fut-porch.jpg',  cap:'still ordinary. on purpose.' },
+      { p:0.95, black:1, cap:'thank you for existing. · happy birthday, Aria.', vo:'secret' },
+      { p:1.00, end:1 }
+    ]
+  },
 
   /* ✦ THE LETTER — typewritten when the wax seal is broken.
         {HER} is replaced with names.her automatically. */
@@ -925,6 +1018,7 @@ Whatever this year brings, know this: you will be loved on every single day of i
 
   /* ✦ STATISTICS — the official numbers (type: 'count' | 'infinity' | 'text') */
   stats: [
+    { label:'Days of us — three years and counting', type:'days', to:0, display:'+' },
     { label:'Times you’ve made me smile', type:'infinity', to:999999, display:'∞' },
     { label:'Times I’ve missed you', type:'text', display:'Too many.' },
     { label:'Times you’ve been beautiful', type:'text', display:'Every day.' },
@@ -1254,6 +1348,7 @@ const AudioFX=(()=>{
       a.currentTime=0; safePlay(a); return a; },
     getVoice(name){ return VOICES[name]||null; },
     stopVoices(){ Object.values(VOICES).forEach(a=>{ try{ a.pause(); }catch(e){} }); },
+    safePlay(a){ safePlay(a); },
     get muted(){return muted;}, get vol(){return vol;},
     heartbeat(){ ensure(); if(!ctx) return; const t=ctx.currentTime+.05;
       [0,.3,1.15,1.45].forEach((off,i)=>{
@@ -1493,12 +1588,84 @@ const TitleCard=(()=>{
       tc.classList.add('bye');
       setTimeout(()=>tc.classList.remove('show','bye'),1100);
       Experience.start();
+      setTimeout(()=>Film.open(),800);
       if(Hero.isBirthdayToday()){
         setTimeout(()=>{ fireworks(4); confettiBurst({particleCount:140,spread:110,origin:{y:.4}}); },800);
       }
     }, REDUCED?700:3800);
   }
   return { play };
+})();
+
+/* ══════════════════════════════════════════════════════════════════
+   FILM ENGINE — auto-play cue-driven cinema (the song is the spine)
+   ══════════════════════════════════════════════════════════════════ */
+function daysTogether(){
+  const d=new Date(CONFIG.togetherSince);
+  return Math.max(0,Math.floor((Date.now()-d.getTime())/86400000));
+}
+const Film=(()=>{
+  let open=false,playing=false,t0=0,acc=0,dur=CONFIG.film.duration,audio=null,ended=false;
+  let fired=new Set(),useA=true;
+  const A=$('#stillA'),B=$('#stillB'),capEl=$('#filmCap'),hair=$('#filmHair');
+  const CUES=CONFIG.film.cues;
+  function time(){ if(audio) return audio.currentTime; return acc+(playing?(performance.now()-t0)/1000:0); }
+  function setCap(t,slam){ capEl.classList.remove('show');
+    setTimeout(()=>{ capEl.textContent=t; capEl.classList.toggle('slam',!!slam); if(t) capEl.classList.add('show'); },220); }
+  function showStill(src){ const inn=useA?B:A,out=useA?A:B; useA=!useA; inn.src=src; inn.classList.add('on'); out.classList.remove('on'); }
+  function hideStills(){ A.classList.remove('on'); B.classList.remove('on'); }
+  function doTurn(){ document.documentElement.classList.remove('act-ordinary');
+    confettiBurst({particleCount:170,spread:125,origin:{y:.5}}); fireworks(2);
+    AudioFX.playVoice('turn'); vibrate([30,60,40]); }
+  function apply(cue,silent){
+    if(cue.img) showStill(cue.img); else if(cue.black) hideStills();
+    setCap(cue.cap||'',cue.slam);
+    if(cue.turn){ if(!silent) doTurn(); else document.documentElement.classList.remove('act-ordinary'); }
+    if(!silent&&cue.vo) AudioFX.playVoice(cue.vo);
+  }
+  function reset(){ fired=new Set(); ended=false; acc=0; hair.style.width='0%';
+    hideStills(); capEl.classList.remove('show'); capEl.textContent='';
+    document.documentElement.classList.add('act-ordinary');
+    $('#filmDoors').classList.remove('show'); $('#filmPause').textContent='⏸'; }
+  function openFilm(){ if(open) return; open=true; $('#film').classList.add('open'); stopScroll(); reset(); start(); }
+  function start(){ playing=true; t0=performance.now();
+    if(audio){ try{ audio.currentTime=0; AudioFX.safePlay(audio); }catch(e){} } }
+  function pause(){ if(!playing||ended) return; playing=false; acc=time();
+    if(audio){ try{ audio.pause(); }catch(e){} } $('#filmPause').textContent='▶'; }
+  function resume(){ if(playing||ended) return; playing=true; t0=performance.now();
+    if(audio) AudioFX.safePlay(audio); $('#filmPause').textContent='⏸'; }
+  function seek(t){ if(audio){ try{ audio.currentTime=t; }catch(e){} } else { acc=t; t0=performance.now(); }
+    fired=new Set(); let last=null;
+    CUES.forEach((c,i)=>{ if(c.p<=t/dur){ fired.add(i); if(!c.end) last=c; } });
+    if(last) apply(last,true); else { hideStills(); setCap(''); }
+    ended=false; $('#filmDoors').classList.remove('show'); }
+  function end(){ if(ended) return; ended=true; playing=false;
+    if(audio){ try{ audio.pause(); }catch(e){} }
+    $('#dCredits').innerHTML='a cinenova original<br>directed by '+CONFIG.names.me+' · starring '+CONFIG.names.her+
+      '<br>three years · '+daysTogether()+' days · to be continued';
+    setTimeout(()=>$('#filmDoors').classList.add('show'),700); }
+  function close(){ open=false; playing=false; if(audio){ try{ audio.pause(); }catch(e){} }
+    $('#film').classList.remove('open'); document.documentElement.classList.remove('act-ordinary'); resumeScroll(); }
+  function frame(){ if(!open||!playing||ended) return;
+    const t=time(),prog=t/dur;
+    hair.style.width=(clamp(prog,0,1)*100)+'%';
+    CUES.forEach((c,i)=>{ if(!fired.has(i)&&prog>=c.p){ fired.add(i); if(c.end) end(); else apply(c,false); } });
+    if(prog>=1) end(); }
+  $('#filmPause').addEventListener('click',()=>{ if(playing) pause(); else resume(); });
+  $('#filmSkip').addEventListener('click',end);
+  $('#filmSong').addEventListener('click',()=>$('#filmFile').click());
+  $('#filmFile').addEventListener('change',e=>{
+    const f=e.target.files&&e.target.files[0]; if(!f) return;
+    if(audio){ try{ audio.pause(); }catch(err){} }
+    audio=new Audio(URL.createObjectURL(f));
+    audio.addEventListener('loadedmetadata',()=>{ if(isFinite(audio.duration)&&audio.duration>0) dur=audio.duration; });
+    if(playing) AudioFX.safePlay(audio);
+    toast('now scoring the film with your song ✦');
+  });
+  $('#doorReplay').addEventListener('click',()=>{ reset(); start(); });
+  $('#doorWander').addEventListener('click',close);
+  return { open:openFilm, close, frame, seek, end,
+    get isOpen(){return open;}, get ended(){return ended;}, get dur(){return dur;} };
 })();
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1536,6 +1703,7 @@ const Hero=(()=>{
   }
   function init(){
     isBday=isBirthdayToday();
+    $('#heroYears').textContent='three years together · '+daysTogether()+' days · and counting';
     if(isBday){
       $('#countWrap').style.display='none';
       $('#bdayWrap').style.display='block';
@@ -1982,20 +2150,22 @@ function buildStats(){
 function animateStats(){
   $$('#statsGrid .stat-card').forEach((card,i)=>{
     const s=card._cfg, num=card.querySelector('.stat-num');
-    if(REDUCED){ num.textContent=s.display||(s.to?s.to.toLocaleString():''); return; }
+    const to=s.type==='days'?daysTogether():(s.to||0);
+    const fin=s.type==='days'?to.toLocaleString()+'+':(s.display||to.toLocaleString());
+    if(REDUCED){ num.textContent=fin; return; }
     if(s.type==='text'){
       num.textContent='';
       if(window.gsap) gsap.fromTo(num,{scale:.5,opacity:0},{scale:1,opacity:1,duration:.9,delay:.25+i*.14,ease:'back.out(2.2)'});
       setTimeout(()=>{ num.textContent=s.display; },320+i*150);
       return;
     }
-    const to=s.to||0, dur=2100, t0=performance.now();
+    const dur=2100, t0=performance.now();
     setTimeout(()=>{
       (function stepFn(now){
         const p=clamp((now-t0)/dur,0,1), e=1-Math.pow(2,-10*p);
         num.textContent=Math.round(to*e).toLocaleString();
         if(p<1) requestAnimationFrame(stepFn);
-        else num.textContent=s.display||to.toLocaleString();
+        else num.textContent=fin;
       })(t0);
     },i*150);
   });
@@ -2331,6 +2501,7 @@ function bindChrome(){
     AudioFX.setMuted(m); mute.textContent=m?'✕':'♪';
     mute.setAttribute('aria-label',m?'Unmute':'Mute');
   });
+  $('#filmBtn').addEventListener('click',()=>Film.open());
   /* secret heart + modal bindings */
   $('#secretHeart').addEventListener('click',()=>Secret.open());
   $('#secretStay').addEventListener('click',()=>Secret.close());
@@ -2344,6 +2515,7 @@ function bindChrome(){
   });
   addEventListener('keydown',e=>{
     if(e.key!=='Escape') return;
+    if(Film.isOpen){ Film.close(); return; }
     if(Secret.isOpen()){ Secret.close(); return; }
     if($('#memoryModal').classList.contains('open')) closeMemory();
     else if($('#reasonModal').classList.contains('open')) closeReason();
@@ -2365,7 +2537,7 @@ function masterLoop(now){
   requestAnimationFrame(masterLoop);
   const t=now||performance.now();
   const dt=Math.min(.05,(t-lastFrame)/1000); lastFrame=t;
-  Universe.frame(); FX.frame(dt); Sky.frame(dt); cursorLerp();
+  Universe.frame(); FX.frame(dt); Sky.frame(dt); Film.frame(); cursorLerp();
 }
 function boot(){
   Universe.init(); FX.init();
@@ -2379,6 +2551,8 @@ function boot(){
   requestAnimationFrame(masterLoop);
 }
 boot();
+/* dev/test handle (harmless in prod) */
+window.__cine={Film,AudioFX,CONFIG,daysTogether};
 
 </script>
 </body>

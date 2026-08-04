@@ -16,8 +16,10 @@
    sits back; the site performs. Skipping or finishing the film unlocks
    the scrollable universe ("wander mode") — everything already built.
 2. **Real memories, real couple.** Every photograph is photorealistic and
-   shows the SAME two people (character lock, §3). No emoji art as primary
-   imagery; generated SVG art remains only as an offline fallback.
+   shows the SAME two people (character lock, §3), aged **20–21**, shot
+   like camera-roll photos (phone flash, motion blur, imperfect framing)
+   so nobody can tell they're generated. No emoji art as primary imagery;
+   generated SVG art remains only as an offline fallback.
 3. **Two worlds, one turn.** ACT I "THE ORDINARY" = the same color photos
    shown in near-monochrome with quiet captions. THE TURN (first chorus) =
    filters release, color floods, the universe ignites. ACT II = the
@@ -28,6 +30,9 @@
    original synth sketch in the same I–V–vi–IV feel.
 5. **Copyright-safe poetry.** Captions and VO are ORIGINAL lines that echo
    the song's themes. No lyric text appears anywhere in the code or UI.
+6. **Canon: the 3-year anniversary.** Together since **2023-10-12**
+   (`CONFIG.togetherSince`). All story dates run 2023→today; the hero
+   shows a live "days of us" counter; credits read "three years · N days".
 
 ## 2. EXPERIENCE FLOW (end to end)
 
@@ -51,12 +56,13 @@ re-openable from the music dock (🎬 button).
 
 ## 3. CHARACTER LOCK (paste into EVERY image prompt)
 
-> COUPLE: "a young Nigerian couple — the woman, mid-20s, shoulder-length
-> dark curly hair, warm wide smile; the man, late-20s, short black hair,
-> trimmed beard." STYLE: "photorealistic candid memory photograph, genuine
-> snapshot feel, 35mm film grain, natural skin texture, shallow depth of
-> field." FUTURE: "the same couple now in their seventies — her soft grey
-> curls, his grey beard."
+> COUPLE: "a young Nigerian couple, both around 20-21 years old — the
+> woman with shoulder-length dark curly hair, youthful face, minimal
+> makeup; the man with short black hair and light stubble, boyish smile."
+> STYLE: "ultra-realistic candid smartphone photo from a real camera roll,
+> NOT staged — real skin texture with pores, slight motion blur, imperfect
+> snapshot framing, authentic amateur photo feel." FUTURE: "the same
+> couple now in their seventies — her soft grey curls, his grey beard."
 
 Wardrobe anchors for continuity: her blush-pink sweater (café), yellow
 sundress (hill), his flannel shirt (road), denim jacket (road).
@@ -116,10 +122,10 @@ drag; "skip →" jumps to doors. Keyboard: space pause, → skip.
 ## 6. VOICEOVER SCRIPTS (one consistent "him")
 
 - **VO-title (existing):** "Cinenova original. Out of eight billion stories… this one is ours."
-- **VO-film-open (new):** "They said our colors would fade. …They were wrong."
-- **VO-turn (new):** "And then — you. And nothing about us… was ordinary again."
+- **VO-film-open ✅:** "They said our colors would fade. …They were wrong."
+- **VO-turn ✅:** "And then — you. And nothing about us… was ordinary again."
 - **VO-letter (existing):** full letter read (~50s) — used in film bridge AND wander-mode letter scene.
-- **VO-future (new):** "Same kitchen. Same us. Fifty years from now — we're still dancing."
+- **VO-future ✅:** "Same kitchen. Same us. Fifty years from now — we're still dancing."
 - **VO-secret (existing):** "You found the hidden heart. …Thank you for existing, Aria. Happy birthday."
 
 ## 7. MUSIC (legal + technical)
