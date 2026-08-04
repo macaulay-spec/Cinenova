@@ -318,6 +318,30 @@ h1 em{font-style:italic;background:linear-gradient(100deg,var(--rose) 10%,var(--
 .t-card.expanded .t-detail{max-height:220px;margin-top:12px;opacity:1}
 .t-card .t-more{display:inline-block;margin-top:10px;font-size:.64rem;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-dim)}
 
+/* ── Intermission · Scrapbook polaroids ─────────────────────────── */
+#scrapbook .pile{position:relative;height:80vh;min-height:660px;overflow:hidden;border-radius:30px;
+  border:1px solid var(--glass-brd);
+  background:radial-gradient(80% 70% at 50% 28%,rgba(22,28,70,.55),rgba(7,9,26,.62));
+  box-shadow:0 30px 90px rgba(0,0,0,.45),inset 0 0 90px rgba(142,124,195,.08)}
+.polaroid{position:absolute;width:min(232px,58vw);padding:10px 10px 48px;border-radius:6px;
+  background:linear-gradient(#fffdf9,#f2ebdf);box-shadow:0 18px 46px rgba(0,0,0,.5);
+  cursor:grab;transform-style:preserve-3d;will-change:transform;transition:box-shadow .4s}
+.polaroid:hover{box-shadow:0 24px 60px rgba(0,0,0,.55),0 0 34px var(--glow-lav)}
+.polaroid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:3px;pointer-events:none;
+  filter:saturate(.94) contrast(1.03);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.pol-cap{position:absolute;left:0;right:0;bottom:12px;text-align:center;pointer-events:none;
+  font-family:var(--serif);font-style:italic;color:#5a4a52;font-size:.98rem;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.pol-note{position:absolute;inset:0;border-radius:6px;padding:20px;display:grid;place-items:center;
+  background:linear-gradient(#fff8ef,#f3e5d2);color:#4a3546;text-align:center;
+  font-family:var(--serif);font-style:italic;font-size:1.04rem;line-height:1.55;
+  transform:rotateY(180deg);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+@media(pointer:fine){.polaroid{touch-action:none}}
+@media(max-width:760px){
+  #scrapbook .pile{height:auto;min-height:0;display:grid;grid-template-columns:repeat(2,1fr);gap:20px 14px;padding:20px 14px;overflow:visible}
+  .polaroid{position:relative;left:auto!important;top:auto!important;width:100%}
+}
+
 /* ── Scene 4 · 100 Reasons (bottles) ────────────────────────────── */
 #reasons .bottle-field{position:relative;height:148vh;min-height:900px;margin-top:20px}
 .bottle{position:absolute;width:38px;height:92px;background:none;border:0;padding:0;
@@ -399,6 +423,8 @@ h1 em{font-style:italic;background:linear-gradient(100deg,var(--rose) 10%,var(--
 .letter-sign{margin-top:18px;text-align:right;font-family:var(--serif);font-style:italic;color:#a5645c}
 #foldBack{margin-top:22px;display:block;margin-left:auto;background:none;border:1px solid #d8b9a4;
   color:#a5645c;border-radius:99px;padding:9px 22px;font-size:.78rem;letter-spacing:.18em}
+.letter-vo{margin-top:16px;text-align:right}
+.letter-vo .voice-btn{color:#a5645c;border-color:#d8b9a4;background:rgba(216,185,164,.14)}
 .desk-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);color:rgba(255,246,238,.5);
   font-size:.68rem;letter-spacing:.34em;text-transform:uppercase;pointer-events:none}
 
@@ -624,6 +650,15 @@ footer .f-sub{margin-top:10px;font-size:.78rem;letter-spacing:.26em;text-transfo
     </div>
   </section>
 
+  <!-- ═════════ INTERMISSION · THE SCRAPBOOK ═════════ -->
+  <section id="scrapbook" class="scene" style="--tint:rgba(246,207,214,.07)" aria-labelledby="scrapTitle">
+    <span class="scene-tag rv">intermission</span>
+    <h2 class="scene-title rv" id="scrapTitle" data-delay="0.1">The <em>scrapbook</em></h2>
+    <p class="scene-sub rv" data-delay="0.2">Exhibit A through F of us, scattered on purpose. Drag them around — flip one to read the case notes.</p>
+    <div class="divider rv" data-delay="0.3" aria-hidden="true"></div>
+    <div class="pile rv" id="polaroidPile" data-y="70" data-delay="0.2"></div>
+  </section>
+
   <!-- ═════════ SCENE 4 · 100 REASONS ═════════ -->
   <section id="reasons" class="scene" style="--tint:rgba(246,207,214,.07)" aria-labelledby="reasonsTitle">
     <span class="scene-tag rv">scene four</span>
@@ -658,6 +693,7 @@ footer .f-sub{margin-top:10px;font-size:.78rem;letter-spacing:.26em;text-transfo
       </div>
       <div class="letter-sheet" id="letterSheet" aria-live="polite">
         <p id="letterText"></p>
+        <div class="letter-vo"><button class="voice-btn" id="voLetterBtn">♪ hear it in his voice</button></div>
         <p class="letter-sign">— yours, in every sequel</p>
         <button id="foldBack">fold it back ↺</button>
       </div>
@@ -802,8 +838,9 @@ const CONFIG = {
   /* ✦ COUNTDOWN DATE — optional override (ISO string). Leave null to use the birthday. */
   countdownOverride: null,
 
-  /* ✦ MUSIC — paste a URL to an .mp3 to replace the built-in
-        synthesized ambient piano. Leave '' to use the built-in score. */
+  /* ✦ MUSIC — the built-in score is an original uplifted-ballad sketch
+        (I–V–vi–IV, the “ordinary magic” feel of that Alex Warren record).
+        Paste a URL to an .mp3 here to swap in the real track for personal use. */
   musicUrl: '',
 
   /* ✦ MEMORIES — the six planets of the Memory Galaxy.
@@ -843,6 +880,22 @@ const CONFIG = {
       detail:'You ordered for me. Correctly. That’s when the heart filed its paperwork.' },
     { date:'Today', title:'Still us', text:'Choosing each other, every single day, on purpose.',
       detail:'And if time reset and I had to start again — I’d find you sooner.' }
+  ],
+
+  /* ✦ SCRAPBOOK — draggable polaroids; flip one to read the case notes */
+  polaroids: [
+    { img:'assets/pol-hoodie.jpg',  cap:'the great hoodie theft', rot:-7, x:7,  y:9,
+      note:'Case opened Oct ’22. Suspect: adorable. Verdict: she keeps it forever.' },
+    { img:'assets/pol-concert.jpg', cap:'parking-lot concert',    rot:5,  x:40, y:5,
+      note:'Front row for the worst singer I’ve ever loved. Encore still pending.' },
+    { img:'assets/pol-pancake.jpg', cap:'the pancake incident',   rot:-4, x:69, y:12,
+      note:'One airborne pancake. Zero regrets. The ceiling remembers.' },
+    { img:'assets/pol-waffles.jpg', cap:'3am waffle run',         rot:8,  x:12, y:52,
+      note:'We both agreed it counted as breakfast. Official ruling, no appeals.' },
+    { img:'assets/memory-05.jpg',   cap:'sous-chef & co.',        rot:-9, x:45, y:48,
+      note:'Flour everywhere, pasta endangered. Still the best recipe I know.' },
+    { img:'assets/memory-06.jpg',   cap:'meteor night',           rot:6,  x:71, y:54,
+      note:'You wished out loud. Lucky for you, I already had you.' }
   ],
 
   /* ✦ THE LETTER — typewritten when the wax seal is broken.
@@ -1093,8 +1146,8 @@ const AudioFX=(()=>{
   let musicOn=false, schedTimer=null, stepIdx=0, nextT=0, vol=LS.get('vol',.55), muted=LS.get('muted',false);
   let audioEl=null;
 
-  /* Dreamy chord progression (MIDI notes): Fmaj9 → Dm9 → B♭maj9 → Cadd9 */
-  const CHORDS=[[53,57,60,64,69],[50,53,57,60,65],[46,50,53,57,62],[48,52,55,60,64]];
+  /* Dreamy-yet-uplifting ballad progression (MIDI): F → C → Dm → B♭ */
+  const CHORDS=[[53,57,60,64],[48,52,55,59],[50,53,57,62],[46,50,53,57]];
   const STEP=1.05;
   const mtof=m=>440*Math.pow(2,(m-69)/12);
 
@@ -1142,6 +1195,8 @@ const AudioFX=(()=>{
   function scheduleStep(s,t){
     const chord=CHORDS[Math.floor(s/8)%CHORDS.length];
     if(s%8===0) voice(mtof(chord[0]-12),t,STEP*7,.14,true);          /* bass root  */
+    if(s%8===4) voice(mtof(chord[0]-5),t,STEP*3,.085,true);          /* bass fifth */
+    if(s%8===2) voice(mtof(chord[3]+12),t,STEP*2.2,.07,true);        /* lift note  */
     if(Math.random()<.85){
       const tone=chord[(s%chord.length)+0];
       voice(mtof(tone+12),t+rand(0,.06),STEP*2.4,.105,true);          /* arpeggio  */
@@ -1166,12 +1221,21 @@ const AudioFX=(()=>{
     musicBus.gain.cancelScheduledValues(ctx.currentTime);
     musicBus.gain.setTargetAtTime(target,ctx.currentTime,.6);
   }
+  /* ── Voice-over clips (one consistent "him") ── */
+  function safePlay(a){ try{ const p=a.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+  const VOICES={};
+  function voEl(name){
+    let a=VOICES[name];
+    if(!a){ a=new Audio('assets/vo-'+name+'.mp3'); a.preload='auto'; VOICES[name]=a; }
+    return a;
+  }
+  function applyVoVol(){ const v=muted?0:clamp(vol*1.15,0,1); Object.values(VOICES).forEach(a=>a.volume=v); }
   function toggleMusic(){
     ensure(); if(!ctx) return false;
     musicOn=!musicOn;
     if(CONFIG.musicUrl){
       if(!audioEl){ audioEl=new Audio(CONFIG.musicUrl); audioEl.loop=true; audioEl.volume=clamp(vol,0,1); }
-      if(musicOn) audioEl.play().catch(()=>{}); else audioEl.pause();
+      if(musicOn) safePlay(audioEl); else { try{ audioEl.pause(); }catch(e){} }
       if(audioEl) audioEl.volume=muted?0:vol;
     } else {
       if(musicOn) startSynth(); else stopSynth();
@@ -1182,9 +1246,14 @@ const AudioFX=(()=>{
   return {
     ensure, toggleMusic, get on(){return musicOn;},
     setVolume(v){ vol=clamp(v,0,1); LS.set('vol',vol);
-      if(audioEl) audioEl.volume=muted?0:vol; applyMusicGain(); },
+      if(audioEl) audioEl.volume=muted?0:vol; applyMusicGain(); applyVoVol(); },
     setMuted(m){ muted=m; LS.set('muted',m); if(master) master.gain.value=m?0:1;
-      if(audioEl) audioEl.volume=m?0:vol; },
+      if(audioEl) audioEl.volume=m?0:vol; applyVoVol(); },
+    playVoice(name){ ensure(); const a=voEl(name); applyVoVol();
+      Object.keys(VOICES).forEach(k=>{ try{ VOICES[k].pause(); }catch(e){} });
+      a.currentTime=0; safePlay(a); return a; },
+    getVoice(name){ return VOICES[name]||null; },
+    stopVoices(){ Object.values(VOICES).forEach(a=>{ try{ a.pause(); }catch(e){} }); },
     get muted(){return muted;}, get vol(){return vol;},
     heartbeat(){ ensure(); if(!ctx) return; const t=ctx.currentTime+.05;
       [0,.3,1.15,1.45].forEach((off,i)=>{
@@ -1419,6 +1488,7 @@ const TitleCard=(()=>{
     const tc=$('#titleCard');
     $('#tcName').textContent=CONFIG.names.her;
     tc.classList.add('show');
+    setTimeout(()=>AudioFX.playVoice('title'),700);
     setTimeout(()=>{
       tc.classList.add('bye');
       setTimeout(()=>tc.classList.remove('show','bye'),1100);
@@ -1572,6 +1642,64 @@ function buildTimeline(){
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   INTERMISSION · SCRAPBOOK — drag, tilt, flip polaroids
+   ══════════════════════════════════════════════════════════════════ */
+function setPolT(el){
+  el.style.transform='translate('+el._dx+'px,'+el._dy+'px) rotate('+el._rot+'deg)'+
+    ' rotateX('+el._tx+'deg) rotateY('+((el._flipped?180:0)+el._ty)+'deg) scale('+el._s+')';
+}
+function buildScrapbook(){
+  const pile=$('#polaroidPile');
+  let zTop=20;
+  CONFIG.polaroids.forEach(p=>{
+    const el=document.createElement('div');
+    el.className='polaroid';
+    el.setAttribute('role','button'); el.setAttribute('tabindex','0');
+    el.setAttribute('aria-label',p.cap+' — activate to flip and read the note');
+    el.style.left=p.x+'%'; el.style.top=p.y+'%'; el.style.zIndex=zTop;
+    el._rot=p.rot; el._dx=0; el._dy=0; el._tx=0; el._ty=0; el._s=1; el._flipped=false;
+    el.innerHTML='<img src="'+p.img+'" alt="'+p.cap+'" loading="lazy" decoding="async">'+
+      '<span class="pol-cap">'+p.cap+'</span><span class="pol-note">'+p.note+'</span>';
+    setPolT(el); pile.appendChild(el);
+    const flip=()=>{ el._flipped=!el._flipped; setPolT(el); AudioFX.tick(); vibrate(6); };
+    if(COARSE){
+      el.addEventListener('click',flip);
+      el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); flip(); } });
+      return;
+    }
+    el.addEventListener('pointerdown',e=>{
+      e.preventDefault();
+      try{ el.setPointerCapture(e.pointerId); }catch(err){}
+      el.style.zIndex=++zTop;
+      const sx=e.clientX-el._dx, sy=e.clientY-el._dy;
+      let moved=0;
+      el._s=1.06; setPolT(el);
+      const mv=ev=>{
+        const nx=ev.clientX-sx, ny=ev.clientY-sy;
+        moved=Math.max(moved,Math.hypot(nx-el._dx,ny-el._dy));
+        el._dx=nx; el._dy=ny; setPolT(el);
+      };
+      const up=()=>{
+        el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up);
+        el._s=1; setPolT(el);
+        if(moved<6) flip();
+      };
+      el.addEventListener('pointermove',mv);
+      el.addEventListener('pointerup',up);
+    });
+    el.addEventListener('pointermove',e=>{
+      if(el._s>1) return;
+      const r=el.getBoundingClientRect();
+      const rx=((e.clientX-r.left)/Math.max(1,r.width)-.5)*2;
+      const ry=((e.clientY-r.top)/Math.max(1,r.height)-.5)*2;
+      el._ty=rx*9; el._tx=-ry*7; setPolT(el);
+    });
+    el.addEventListener('pointerleave',()=>{ el._ty=0; el._tx=0; setPolT(el); });
+    el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); flip(); } });
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════
    SCENE 4 · 100 REASONS — drifting bottles
    ══════════════════════════════════════════════════════════════════ */
 const openedReasons=new Set(LS.get('reasons',[]));
@@ -1642,6 +1770,7 @@ function initLetter(){
       sheet.classList.add('show');
       gsap.fromTo(sheet,{y:90,opacity:0,scale:.94},{y:0,opacity:1,scale:1,duration:.9,ease:'power3.out'});
       AudioFX.paper();
+      AudioFX.playVoice('letter');
       const sign=sheet.querySelector('.letter-sign'), fb=$('#foldBack');
       sign.style.opacity=0; fb.style.opacity=0;
       setTimeout(()=>typewriter($('#letterText'),letterText(),22,()=>{
@@ -1658,8 +1787,16 @@ function initLetter(){
     tl.to('#envLetter',{yPercent:-64,duration:.9,ease:'power2.out'},'-=.25');
     tl.to('#envelope',{opacity:0,scale:.9,y:26,duration:.7,ease:'power2.inOut'},'+=.15');
   });
+  const voBtn=$('#voLetterBtn');
+  voBtn.addEventListener('click',()=>{
+    const a=AudioFX.getVoice('letter');
+    if(a&&!a.paused){ try{ a.pause(); }catch(e){} voBtn.textContent='♪ hear it in his voice'; }
+    else { AudioFX.playVoice('letter'); voBtn.textContent='❚❚ pause his voice'; }
+  });
   $('#foldBack').addEventListener('click',()=>{
     const pt=$('#letterText');
+    const lv=AudioFX.getVoice('letter'); if(lv){ try{ lv.pause(); }catch(e){} }
+    voBtn.textContent='♪ hear it in his voice';
     if(pt._tw){ clearInterval(pt._tw); pt._tw=null; pt.classList.remove('typing'); }
     sheet.classList.remove('show'); pt.textContent='';
     const sign=sheet.querySelector('.letter-sign'), fb=$('#foldBack');
@@ -1987,6 +2124,7 @@ const Secret=(()=>{
     if(openFlag) return; openFlag=true;
     const overlay=$('#secret'); overlay.classList.add('open'); stopScroll();
     $('#secCredits').textContent='directed by '+CONFIG.names.me+' · starring '+CONFIG.names.her+' · written in the stars';
+    setTimeout(()=>AudioFX.playVoice('secret'),1100);
     const cv=$('#secretCanvas'), g=cv.getContext('2d');
     const W=innerWidth,H=innerHeight,DPR=Math.min(devicePixelRatio||1,2);
     cv.width=W*DPR; cv.height=H*DPR; g.setTransform(DPR,0,0,DPR,0,0);
@@ -2033,6 +2171,7 @@ const Secret=(()=>{
   }
   function close(){
     openFlag=false;
+    AudioFX.stopVoices();
     if(rafId) cancelAnimationFrame(rafId);
     timers.forEach(clearTimeout); timers=[];
     $('#secret').classList.remove('open','rise');
@@ -2230,7 +2369,7 @@ function masterLoop(now){
 }
 function boot(){
   Universe.init(); FX.init();
-  buildGalaxy(); buildTimeline(); buildBottles(); buildStats(); buildPromises();
+  buildGalaxy(); buildTimeline(); buildScrapbook(); buildBottles(); buildStats(); buildPromises();
   Wheel.init(); Sky.init(); initLetter();
   Hero.init();
   applyTheme(LS.get('theme','dark'));
