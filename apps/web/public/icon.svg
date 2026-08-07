@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="CineNova icon">
+  <rect width="128" height="128" rx="32" fill="#05070b"/>
+  <circle cx="64" cy="64" r="42" fill="#e46b4a" opacity=".92"/>
+  <path d="M45 35h18c18 0 31 12 31 29S81 93 63 93H45V35Zm18 42c8 0 14-5 14-13s-6-13-14-13h-1v26h1Z" fill="#fff"/>
+</svg>

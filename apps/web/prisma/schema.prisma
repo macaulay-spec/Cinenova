@@ -1,0 +1,598 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  SUPPORT
+  EDITOR
+  RIGHTS_MANAGER
+  ADMIN
+  OWNER
+}
+
+enum ProfileType {
+  ADULT
+  TEEN
+  CHILD
+}
+
+enum PlanCode {
+  guest
+  free
+  standard
+  premium
+  admin
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  canceled
+  incomplete
+  paused
+}
+
+enum TitleKind {
+  movie
+  series
+  episode
+  trailer
+}
+
+enum MaturityRating {
+  G
+  PG
+  PG_13
+  R
+  NC_17
+}
+
+enum ArtworkKind {
+  poster
+  landscape
+  hero
+  logo
+}
+
+enum DownloadStatus {
+  requested
+  authorized
+  unavailable
+  expired
+  revoked
+}
+
+enum ModerationState {
+  pending
+  approved
+  rejected
+  hidden
+}
+
+model User {
+  id                 String                @id @default(uuid()) @db.Uuid
+  email              String                @unique
+  displayName        String?
+  roles              Role[]                @default([USER])
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  identities         AuthIdentity[]
+  sessions           Session[]
+  profiles           Profile[]
+  devices            Device[]
+  subscriptions      Subscription[]
+  paymentEvents      PaymentEvent[]
+  notificationPrefs  NotificationPreference[]
+  featureFlags       FeatureFlagAssignment[]
+  auditLogs          AuditLog[]            @relation("ActorAuditLogs")
+  consentRecords     ConsentRecord[]
+  deletionRequests   DataDeletionRequest[]
+
+  @@index([createdAt])
+}
+
+model AuthIdentity {
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String   @db.Uuid
+  provider           String
+  providerSubject    String
+  passwordHash       String?
+  emailVerifiedAt    DateTime?
+  createdAt          DateTime @default(now())
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerSubject])
+  @@index([userId])
+}
+
+model Session {
+  id                 String    @id @default(uuid()) @db.Uuid
+  userId             String    @db.Uuid
+  profileId          String    @db.Uuid
+  deviceId           String?   @db.Uuid
+  tokenHash          String    @unique
+  ipHash             String?
+  userAgentHash      String?
+  ip                 String?
+  userAgent          String?
+  lastSeenAt         DateTime  @default(now())
+  expiresAt          DateTime
+  revokedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile            Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  device             Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, expiresAt])
+  @@index([deviceId])
+}
+
+model Profile {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  userId                String                 @db.Uuid
+  name                  String
+  avatarInitial         String                 @default("")
+  type                  ProfileType            @default(ADULT)
+  maturityCeiling       MaturityRating         @default(R)
+  pinHash               String?
+  language              String                 @default("en")
+  autoplay              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watchlistItems        WatchlistItem[]
+  playbackProgress      PlaybackProgress[]
+  watchHistory          WatchHistory[]
+  ratings               Rating[]
+  reviews               Review[]
+  downloadRecords       DownloadRecord[]
+
+  @@index([userId])
+}
+
+model Device {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  userId                String                 @db.Uuid
+  name                  String
+  deviceHash            String                 @unique
+  trusted               Boolean                @default(false)
+  offlineRegistered     Boolean                @default(false)
+  lastSeenAt            DateTime?
+  revokedAt             DateTime?
+  createdAt             DateTime               @default(now())
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions              Session[]
+  downloadRecords       DownloadRecord[]
+
+  @@index([userId, lastSeenAt])
+}
+
+model Plan {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  code                  PlanCode               @unique
+  name                  String
+  priceCents            Int
+  currency              String                 @default("USD")
+  concurrentStreams     Int                    @default(1)
+  offlineDeviceLimit    Int                    @default(0)
+  active                Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  subscriptions         Subscription[]
+  entitlements          Entitlement[]
+}
+
+model Subscription {
+  id                      String             @id @default(uuid()) @db.Uuid
+  userId                  String             @db.Uuid
+  planId                  String             @db.Uuid
+  status                  SubscriptionStatus
+  provider                String             @default("mock")
+  providerCustomerId      String?
+  providerSubscriptionId  String?
+  currentPeriodStart      DateTime
+  currentPeriodEnd        DateTime
+  trialEndsAt             DateTime?
+  graceUntil              DateTime?
+  canceledAt              DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                    Plan               @relation(fields: [planId], references: [id])
+  entitlements            Entitlement[]
+
+  @@index([userId, status])
+  @@index([provider, providerSubscriptionId])
+}
+
+model Entitlement {
+  id                 String       @id @default(uuid()) @db.Uuid
+  userId             String       @db.Uuid
+  planId             String       @db.Uuid
+  subscriptionId     String?      @db.Uuid
+  active             Boolean      @default(true)
+  snapshot           Json
+  createdAt          DateTime     @default(now())
+  expiresAt          DateTime?
+  plan               Plan         @relation(fields: [planId], references: [id])
+  subscription       Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, active, expiresAt])
+}
+
+model PaymentEvent {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String?  @db.Uuid
+  provider            String
+  eventType           String
+  idempotencyKey      String   @unique
+  providerEventId     String?  @unique
+  safePayloadSummary  Json
+  processedAt         DateTime?
+  createdAt           DateTime @default(now())
+  user                User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([provider, eventType, createdAt])
+}
+
+model Title {
+  id                 String                 @id @default(uuid()) @db.Uuid
+  slug               String                 @unique
+  kind               TitleKind
+  title              String
+  synopsis           String
+  releaseDate        DateTime?
+  releaseYear        Int
+  runtimeSeconds     Int?
+  maturityRating     MaturityRating
+  originalCountry    String
+  visible            Boolean                @default(true)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  providerMappings   ProviderTitleMapping[]
+  seasons            Season[]
+  episodes           Episode[]              @relation("SeriesEpisodes")
+  genres             TitleGenre[]
+  artwork            Artwork[]
+  trailers           Trailer[]
+  rights             ContentRight[]
+  watchlistItems     WatchlistItem[]
+  playbackProgress   PlaybackProgress[]
+  watchHistory       WatchHistory[]
+  ratings            Rating[]
+  reviews            Review[]
+  downloadRecords    DownloadRecord[]
+  editorialItems     EditorialRailItem[]
+
+  @@index([kind, visible])
+  @@index([releaseYear])
+  @@index([maturityRating])
+}
+
+model ProviderTitleMapping {
+  id             String   @id @default(uuid()) @db.Uuid
+  titleId        String   @db.Uuid
+  provider       String
+  providerId     String
+  detailPath     String?
+  lastSyncedAt   DateTime?
+  rawFingerprint String?
+  title          Title    @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([titleId])
+}
+
+model Season {
+  id             String    @id @default(uuid()) @db.Uuid
+  titleId        String    @db.Uuid
+  seasonNumber   Int
+  title          String
+  synopsis       String?
+  parentTitle    Title     @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  episodes       Episode[]
+
+  @@unique([titleId, seasonNumber])
+}
+
+model Episode {
+  id             String    @id @default(uuid()) @db.Uuid
+  seriesId       String    @db.Uuid
+  seasonId       String    @db.Uuid
+  slug           String    @unique
+  title          String
+  synopsis       String
+  seasonNumber   Int
+  episodeNumber  Int
+  runtimeSeconds Int
+  assetId        String
+  series         Title     @relation("SeriesEpisodes", fields: [seriesId], references: [id], onDelete: Cascade)
+  season         Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, seasonNumber, episodeNumber])
+  @@index([seasonId])
+}
+
+model Genre {
+  id       String       @id @default(uuid()) @db.Uuid
+  slug     String       @unique
+  name     String       @unique
+  titles   TitleGenre[]
+}
+
+model TitleGenre {
+  titleId  String @db.Uuid
+  genreId  String @db.Uuid
+  title    Title  @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  genre    Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([titleId, genreId])
+  @@index([genreId])
+}
+
+model Artwork {
+  id             String      @id @default(uuid()) @db.Uuid
+  titleId        String      @db.Uuid
+  kind           ArtworkKind
+  url            String
+  alt            String
+  width          Int
+  height         Int
+  dominantColor  String
+  provenance     String      @default("mock")
+  title          Title       @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@index([titleId, kind])
+}
+
+model Trailer {
+  id             String   @id @default(uuid()) @db.Uuid
+  titleId        String   @db.Uuid
+  assetId        String
+  language       String   @default("en")
+  title          Title    @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@index([titleId])
+}
+
+model ContentRight {
+  id                       String   @id @default(uuid()) @db.Uuid
+  titleId                  String   @db.Uuid
+  territories              String[]
+  startsAt                 DateTime
+  endsAt                   DateTime
+  minimumPlan              PlanCode
+  streamAllowed            Boolean  @default(false)
+  offlineDownloadAllowed   Boolean  @default(false)
+  permittedAssetIds        String[]
+  rightsHolder             String
+  contractReferenceHash    String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  title                    Title    @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@index([titleId, startsAt, endsAt])
+  @@index([minimumPlan])
+}
+
+model WatchlistItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  profileId   String   @db.Uuid
+  titleId     String   @db.Uuid
+  createdAt   DateTime @default(now())
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title       Title    @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, titleId])
+  @@index([titleId])
+}
+
+model PlaybackProgress {
+  id                 String   @id @default(uuid()) @db.Uuid
+  profileId          String   @db.Uuid
+  titleId            String   @db.Uuid
+  episodeId          String?
+  positionSeconds    Int
+  durationSeconds    Int
+  completed          Boolean  @default(false)
+  updatedAt          DateTime @updatedAt
+  profile            Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title              Title    @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, titleId, episodeId])
+  @@index([profileId, updatedAt])
+}
+
+model WatchHistory {
+  id                 String   @id @default(uuid()) @db.Uuid
+  profileId          String   @db.Uuid
+  titleId            String   @db.Uuid
+  episodeId          String?
+  watchedAt          DateTime @default(now())
+  progressSeconds    Int
+  profile            Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title              Title    @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, watchedAt])
+  @@index([titleId, watchedAt])
+}
+
+model Rating {
+  id          String   @id @default(uuid()) @db.Uuid
+  profileId   String   @db.Uuid
+  titleId     String   @db.Uuid
+  value       Int
+  createdAt   DateTime @default(now())
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title       Title    @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, titleId])
+}
+
+model Review {
+  id                String           @id @default(uuid()) @db.Uuid
+  profileId          String           @db.Uuid
+  titleId            String           @db.Uuid
+  body              String
+  moderationState   ModerationState  @default(pending)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  profile           Profile          @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title             Title            @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@index([titleId, moderationState])
+}
+
+model DownloadRecord {
+  id             String              @id @default(uuid()) @db.Uuid
+  profileId      String              @db.Uuid
+  titleId        String              @db.Uuid
+  deviceId       String              @db.Uuid
+  assetId        String
+  status         DownloadStatus      @default(requested)
+  expiresAt      DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  profile        Profile             @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title          Title               @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  device         Device              @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  authorizations DownloadAuthorization[]
+
+  @@index([profileId, status])
+  @@index([deviceId, status])
+  @@index([titleId])
+}
+
+model DownloadAuthorization {
+  id                String          @id @default(uuid()) @db.Uuid
+  downloadRecordId  String          @db.Uuid
+  authorizationHash String          @unique
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  createdAt         DateTime        @default(now())
+  downloadRecord    DownloadRecord  @relation(fields: [downloadRecordId], references: [id], onDelete: Cascade)
+
+  @@index([downloadRecordId, expiresAt])
+}
+
+model NotificationPreference {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  channel     String
+  topic       String
+  enabled     Boolean  @default(true)
+  quietHours  Json?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel, topic])
+}
+
+model FeatureFlagAssignment {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String?  @db.Uuid
+  flagKey     String
+  variant     String
+  reason      String?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([flagKey, variant])
+  @@index([userId])
+}
+
+model ProviderHealthLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  provider       String
+  status         String
+  latencyMs      Int?
+  safeMessage    String
+  checkedAt      DateTime @default(now())
+
+  @@index([provider, checkedAt])
+}
+
+model EditorialRail {
+  id             String               @id @default(uuid()) @db.Uuid
+  slug           String               @unique
+  title          String
+  subtitle       String?
+  region         String
+  publishedAt    DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  items          EditorialRailItem[]
+
+  @@index([region, publishedAt])
+}
+
+model EditorialRailItem {
+  id             String        @id @default(uuid()) @db.Uuid
+  railId         String        @db.Uuid
+  titleId        String        @db.Uuid
+  position       Int
+  rail           EditorialRail @relation(fields: [railId], references: [id], onDelete: Cascade)
+  title          Title         @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@unique([railId, position])
+  @@unique([railId, titleId])
+}
+
+model AnalyticsEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @default("default")
+  profileId      String?
+  eventName      String
+  occurredAt     DateTime @default(now())
+  consentBasis   String
+  properties     Json
+
+  @@index([tenantId, occurredAt])
+  @@index([eventName, occurredAt])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  actorId        String?  @db.Uuid
+  action         String
+  resourceType   String
+  resourceId     String?
+  safeSummary    Json
+  ipHash         String?
+  deviceHash     String?
+  createdAt      DateTime @default(now())
+  actor          User?    @relation("ActorAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([resourceType, resourceId])
+}
+
+model ConsentRecord {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  purpose        String
+  granted        Boolean
+  region         String
+  recordedAt     DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
+model DataDeletionRequest {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  status         String
+  requestedAt    DateTime @default(now())
+  completedAt    DateTime?
+  auditSummary   Json?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}

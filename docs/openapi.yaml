@@ -1,0 +1,526 @@
+openapi: 3.1.0
+info:
+  title: CineNova API
+  version: 0.1.0
+  summary: Rights-aware streaming platform API foundation.
+  description: >-
+    Initial REST API contract for mock licensed catalogue, search, playback session creation,
+    downloads, and provider health. All sensitive provider calls remain server-side.
+servers:
+  - url: http://localhost:3000
+    description: Local development
+paths:
+  /api/v1/me:
+    get:
+      summary: Get principal, entitlement, and session status
+      operationId: getMe
+      responses:
+        '200':
+          description: Active user, profile, devices, entitlement, roles, permissions, and session status
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/auth/session:
+    get:
+      summary: Establish or resolve the session and return a CSRF token
+      operationId: getSession
+      responses:
+        '200':
+          description: Session established; sets the HttpOnly session cookie and returns a CSRF token
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: The HttpOnly, SameSite=Strict session cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [authenticated, sessionId, profileId, csrfToken, csrfRequired, expiresAt]
+                properties:
+                  authenticated:
+                    type: boolean
+                  sessionId:
+                    type: string
+                  profileId:
+                    type: string
+                  csrfToken:
+                    type: string
+                  csrfRequired:
+                    type: boolean
+                  expiresAt:
+                    type: string
+                    format: date-time
+  /api/v1/auth/session/revoke:
+    post:
+      summary: Revoke the current session and clear its cookie
+      operationId: revokeSession
+      responses:
+        '200':
+          description: Session revoked and cookie cleared
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+  /api/v1/profiles:
+    get:
+      summary: List profiles for the active account
+      operationId: getProfiles
+      responses:
+        '200':
+          description: Profile list and active profile
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Validate profile creation request
+      operationId: createProfile
+      security:
+        - CsrfToken: []
+      responses:
+        '202':
+          description: Profile creation accepted by contract; persistence pending identity writer
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Problem'
+  /api/v1/profiles/active:
+    post:
+      summary: Switch active profile
+      operationId: switchActiveProfile
+      security:
+        - CsrfToken: []
+      responses:
+        '200':
+          description: Active profile switched for JSON clients
+          content:
+            application/json:
+              schema:
+                type: object
+        '303':
+          description: Redirect for browser form submissions
+        '400':
+          $ref: '#/components/responses/Problem'
+  /api/v1/admin/audit:
+    get:
+      summary: List audit log entries when the principal has audit permission
+      operationId: getAuditLog
+      responses:
+        '200':
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/Problem'
+  /api/v1/catalogue:
+    get:
+      summary: Get home catalogue rails
+      operationId: getCatalogueHome
+      responses:
+        '200':
+          description: Home response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeResponse'
+  /api/v1/search:
+    get:
+      summary: Search the licensed catalogue
+      operationId: searchCatalogue
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 120
+        - name: region
+          in: query
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 2
+            default: NG
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          $ref: '#/components/responses/Problem'
+  /api/v1/title/{slug}:
+    get:
+      summary: Get title detail by slug
+      operationId: getTitleBySlug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: region
+          in: query
+          schema:
+            type: string
+            default: NG
+      responses:
+        '200':
+          description: Title detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleDetail'
+        '404':
+          $ref: '#/components/responses/Problem'
+  /api/v1/playback/session:
+    post:
+      summary: Create a short-lived playback session
+      operationId: createPlaybackSession
+      security:
+        - CsrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titleId]
+              properties:
+                titleId:
+                  type: string
+                assetId:
+                  type: string
+                profileId:
+                  type: string
+                  default: local-profile
+                deviceId:
+                  type: string
+                  default: local-browser
+                territory:
+                  type: string
+                  default: NG
+                  minLength: 2
+                  maxLength: 2
+      responses:
+        '200':
+          description: Authorized playback source
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: Always no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaybackSource'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+  /api/v1/downloads:
+    post:
+      summary: Request an offline download authorization
+      operationId: createDownload
+      security:
+        - CsrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titleId, profileId, deviceId, territory, idempotencyKey]
+              properties:
+                titleId:
+                  type: string
+                assetId:
+                  type: string
+                profileId:
+                  type: string
+                deviceId:
+                  type: string
+                territory:
+                  type: string
+                  minLength: 2
+                  maxLength: 2
+                idempotencyKey:
+                  type: string
+                  minLength: 16
+                  maxLength: 128
+      responses:
+        '200':
+          description: Download unavailable state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadRecord'
+        '201':
+          description: Download authorized state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadRecord'
+        '400':
+          $ref: '#/components/responses/Problem'
+  /api/v1/health:
+    get:
+      summary: Health readiness endpoint
+      operationId: getHealth
+      responses:
+        '200':
+          description: Health result
+  /api/v1/admin/provider-health:
+    get:
+      summary: Provider health status
+      operationId: getProviderHealth
+      responses:
+        '200':
+          description: Provider health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderHealth'
+components:
+  securitySchemes:
+    CsrfToken:
+      type: apiKey
+      in: header
+      name: x-csrf-token
+      description: >-
+        A short-lived, HMAC-signed CSRF token bound to the active session and
+        user, returned by GET /api/v1/auth/session. Required on all mutations.
+  responses:
+    Problem:
+      description: RFC 7807-like problem response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        code:
+          type: string
+        detail:
+          type: string
+        traceId:
+          type: string
+    Artwork:
+      type: object
+      required: [url, kind, alt, width, height, dominantColor]
+      properties:
+        url:
+          type: string
+        kind:
+          enum: [poster, landscape, hero, logo]
+        alt:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        dominantColor:
+          type: string
+    TitleSummary:
+      type: object
+      required: [id, slug, kind, title, synopsis, releaseYear, maturityRating, genres, countries, artwork, availableFrom, availableUntil, minimumPlan, offlineDownloadAllowed]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        kind:
+          enum: [movie, series, episode, trailer]
+        title:
+          type: string
+        synopsis:
+          type: string
+        releaseYear:
+          type: integer
+        runtimeSeconds:
+          type: [integer, 'null']
+        maturityRating:
+          enum: [G, PG, PG_13, R, NC_17]
+        genres:
+          type: array
+          items:
+            type: string
+        countries:
+          type: array
+          items:
+            type: string
+        artwork:
+          type: array
+          items:
+            $ref: '#/components/schemas/Artwork'
+        availableFrom:
+          type: string
+          format: date-time
+        availableUntil:
+          type: string
+          format: date-time
+        minimumPlan:
+          enum: [guest, free, standard, premium, admin]
+        offlineDownloadAllowed:
+          type: boolean
+    TitleDetail:
+      allOf:
+        - $ref: '#/components/schemas/TitleSummary'
+        - type: object
+          required: [cast, directors, audioTracks, subtitleTracks, seasons, primaryAssetId, rightsExplanation]
+          properties:
+            cast:
+              type: array
+              items:
+                type: string
+            directors:
+              type: array
+              items:
+                type: string
+            audioTracks:
+              type: array
+              items:
+                $ref: '#/components/schemas/Track'
+            subtitleTracks:
+              type: array
+              items:
+                $ref: '#/components/schemas/Track'
+            seasons:
+              type: array
+              items:
+                type: object
+            primaryAssetId:
+              type: string
+            rightsExplanation:
+              type: string
+    Track:
+      type: object
+      required: [language, label, kind, accessibility]
+      properties:
+        language:
+          type: string
+        label:
+          type: string
+        kind:
+          enum: [subtitles, captions, audio]
+        accessibility:
+          type: boolean
+    HomeResponse:
+      type: object
+      required: [hero, rails, generatedAt]
+      properties:
+        hero:
+          $ref: '#/components/schemas/TitleDetail'
+        rails:
+          type: array
+          items:
+            type: object
+            required: [id, title, items]
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              subtitle:
+                type: string
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TitleSummary'
+        generatedAt:
+          type: string
+          format: date-time
+    SearchResponse:
+      type: object
+      required: [query, results, suggestions]
+      properties:
+        query:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TitleSummary'
+        suggestions:
+          type: array
+          items:
+            type: string
+    PlaybackSource:
+      type: object
+      required: [sessionId, playbackUrl, sourceType, expiresAt, drmActive, drmScheme, captions, audio, heartbeatIntervalSeconds, policy]
+      properties:
+        sessionId:
+          type: string
+        playbackUrl:
+          type: string
+        sourceType:
+          enum: [mp4, hls, dash]
+        expiresAt:
+          type: string
+          format: date-time
+        drmActive:
+          type: boolean
+        drmScheme:
+          enum: [none, widevine, fairplay, playready]
+        captions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+        audio:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+        heartbeatIntervalSeconds:
+          type: integer
+        policy:
+          type: object
+    DownloadRecord:
+      type: object
+      required: [id, titleId, profileId, deviceId, status, expiresAt, message]
+      properties:
+        id:
+          type: string
+        titleId:
+          type: string
+        profileId:
+          type: string
+        deviceId:
+          type: string
+        status:
+          enum: [requested, authorized, unavailable, expired, revoked]
+        expiresAt:
+          type: [string, 'null']
+          format: date-time
+        message:
+          type: string
+    ProviderHealth:
+      type: object
+      required: [provider, status, latencyMs, lastCheckedAt, message]
+      properties:
+        provider:
+          type: string
+        status:
+          enum: [disabled, healthy, degraded, unhealthy]
+        latencyMs:
+          type: [integer, 'null']
+        lastCheckedAt:
+          type: string
+          format: date-time
+        message:
+          type: string

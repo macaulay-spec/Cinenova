@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "checkJs": false,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@cinenova/domain": ["packages/domain/src/index.ts"],
+      "@cinenova/contracts": ["packages/contracts/src/index.ts"],
+      "@cinenova/provider-sdk": ["packages/provider-sdk/src/index.ts"],
+      "@cinenova/ui": ["packages/ui/src/index.ts"],
+      "@cinenova/observability": ["packages/observability/src/index.ts"],
+      "@cinenova/config": ["packages/config/src/index.ts"],
+      "@cinenova/db": ["packages/db/src/index.ts"]
+    }
+  }
+}

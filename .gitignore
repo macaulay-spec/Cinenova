@@ -1,0 +1,37 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# builds
+.next
+dist
+coverage
+storybook-static
+.turbo
+
+# env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# local db / generated
+*.db
+*.sqlite
+*.sqlite3
+apps/web/prisma/dev.db
+
+# OS / editor
+.DS_Store
+.idea
+.vscode
+
+# TypeScript incremental cache
+*.tsbuildinfo

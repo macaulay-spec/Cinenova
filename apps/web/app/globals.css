@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   CineNova — Cinematic premium dark design tokens
+   Semantic tokens only. No component hardcodes colour.
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  /* Colour system — CineNova v1.0 semantic tokens (no component hardcodes) */
+  --background: #0B0D12; /* primary canvas */
+  --foreground: #F7F2EA; /* primary text */
+  --surface: #151821; /* surface */
+  --surface-raised: #1C202B; /* elevated surface */
+  --primary: #E66D4D; /* brand accent (CineNova orange) */
+  --primary-foreground: #0B0D12;
+  --secondary: #B8B6B2; /* secondary text */
+  --muted-foreground: #838692; /* muted text */
+  --border: #2A2F3A;
+  --success: #42B883;
+  --warning: #F1B556;
+  --danger: #E85C5C;
+  --gold: #F1B556; /* reserved for star ratings */
+
+  /* Composite cinematic tokens */
+  --gradient-hero:
+    linear-gradient(
+      to top,
+      #0B0D12 0%,
+      rgba(11, 13, 18, 0.82) 34%,
+      transparent 82%
+    );
+  --gradient-poster: linear-gradient(to top, #0B0D12 0%, transparent 62%);
+  --shadow-cinematic: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+
+  /* Typography */
+  --font-display: 'Inter', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--background);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display type: Archivo, uppercase, tight, poster-like */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 0.95;
+}
+
+/* Wordmark: "Cine" ivory + "Nova" amber-red */
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  line-height: 1;
+}
+
+/* Eyebrow label */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  color: var(--primary);
+}
+
+::selection {
+  background: color-mix(in oklch, var(--primary) 45%, transparent);
+  color: var(--foreground);
+}
+
+/* Player transport controls */
+.transport-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  width: 2.75rem;
+  border-radius: 9999px;
+  color: rgb(255 255 255 / 0.85);
+  transition: background-color 0.15s ease;
+}
+.transport-btn:hover {
+  background-color: rgb(255 255 255 / 0.15);
+}
+.transport-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Hide horizontal scrollbars on rails */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Accessibility: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

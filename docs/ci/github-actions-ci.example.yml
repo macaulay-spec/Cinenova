@@ -1,0 +1,33 @@
+name: CineNova CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - arena/**
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install pnpm
+        run: npm install -g pnpm@9.15.4
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prisma generate
+        run: pnpm --filter @cinenova/web prisma:generate
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+      - name: Audit high severity dependencies
+        run: pnpm security:scan
